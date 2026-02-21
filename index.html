@@ -3,347 +3,804 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>QUASAR Terminal</title>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <title>SEPTIMA Terminal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #ffffff;
-            --glass: rgba(255, 255, 255, 0.4);
-            --glass-border: rgba(255, 255, 255, 0.5);
-            --text: #000000;
-            --text-dim: #6e6e73;
-            --accent: #ff3b30;
-            --accent-glow: rgba(255, 59, 48, 0.4);
-            --input-bg: #EDECF1;
-            --card-shadow: 0 20px 40px rgba(0,0,0,0.04);
+            --glass: rgba(255,255,255,0.55);
+            --glass-border: rgba(255,255,255,0.65);
+            --text: #0a0a0a;
+            --text-dim: #8a8a95;
+            --accent: #0a84ff;
+            --accent-glow: rgba(10,132,255,0.25);
+            --input-bg: #f0eff5;
+            --input-border: rgba(0,0,0,0.06);
+            --card-shadow: 0 2px 40px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
             --font: 'Plus Jakarta Sans', sans-serif;
         }
-
         [data-theme="dark"] {
             --bg: #000000;
-            --glass: rgba(28, 28, 30, 0.6);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --text: #ffffff;
-            --text-dim: #a1a1a6;
+            --glass: rgba(18,18,20,0.7);
+            --glass-border: rgba(255,255,255,0.08);
+            --text: #f5f5f7;
+            --text-dim: #6e6e73;
             --accent: #0a84ff;
-            --accent-glow: rgba(10, 132, 255, 0.4);
+            --accent-glow: rgba(10,132,255,0.25);
             --input-bg: #1c1c1e;
-            --card-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            --input-border: rgba(255,255,255,0.05);
+            --card-shadow: 0 2px 40px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3);
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font); -webkit-font-smoothing: antialiased; }
-
+        * { margin:0; padding:0; box-sizing:border-box; font-family:var(--font); -webkit-font-smoothing:antialiased; }
         body {
             background: var(--bg); color: var(--text);
-            height: 100vh; overflow: hidden; display: flex; flex-direction: column;
-            transition: background 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 100vh; overflow-y: auto; display: flex; flex-direction: column;
+            transition: background 0.6s ease, color 0.6s ease;
+        }
+        #canvas-container { position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; filter:blur(90px); opacity:0.4; pointer-events:none; }
+
+        .app-container {
+            flex:1; display:flex; flex-direction:column;
+            padding: 20px 24px 24px; gap:16px;
+            max-width: 1100px; margin: 0 auto; width:100%; z-index:1;
+            min-height: 100vh;
         }
 
-        #canvas-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; filter: blur(80px); opacity: 0.5; }
-
-        .app-container { flex: 1; display: flex; flex-direction: column; padding: 24px; gap: 20px; max-width: 1200px; margin: 0 auto; width: 100%; z-index: 1; }
-
-        /* ВЕРХНЯЯ ПЛАШКА */
+        /* NAV */
         .top-nav {
-            height: 70px; background: var(--glass); backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px); border: 1px solid var(--glass-border);
-            border-radius: 20px; display: flex; align-items: center;
-            padding: 0 20px; box-shadow: var(--card-shadow);
-            gap: 15px;
+            height: 64px;
+            background: var(--glass);
+            backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px;
+            display: flex; align-items: center;
+            padding: 0 18px;
+            box-shadow: var(--card-shadow);
+            gap: 12px;
         }
-
-        .brand-group { display: flex; align-items: center; gap: 12px; }
-
+        .brand-group { display:flex; align-items:center; gap:10px; }
         .quasar-logo {
-            width: 36px; height: 36px; background: var(--accent); border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 15px var(--accent-glow); color: white;
+            width: 34px; height: 34px;
+            background: var(--accent);
+            border-radius: 10px;
+            display: flex; align-items:center; justify-content:center;
+            box-shadow: 0 4px 14px var(--accent-glow);
+            flex-shrink:0;
         }
+        .quasar-logo svg { display:block; }
+        .brand-name { font-weight:800; font-size:16px; letter-spacing:1.5px; color:var(--text); }
 
-        .brand-name { font-weight: 800; font-size: 18px; letter-spacing: 1px; color: var(--text); }
-
-        .bot-tag {
-            font-size: 11px; font-weight: 600; color: var(--text-dim);
-            padding: 6px 14px; background: var(--input-bg); 
-            border: 1px solid var(--glass-border); border-radius: 10px;
-            letter-spacing: 0.2px; text-transform: lowercase;
+        /* User field */
+        .user-field {
+            display: flex; align-items: center;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            padding: 0 12px;
+            height: 38px;
+            gap: 8px;
+            margin-left: auto;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-
-        /* ПОИСК СДВИНУТ ВПРАВО */
-        .search-area { 
-            display: flex; align-items: center; background: var(--input-bg); 
-            border-radius: 12px; padding: 6px 14px; margin-left: auto;
-            border: 1px solid transparent; transition: 0.3s;
+        .user-field:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
         }
-        .search-area input { background: transparent; border: none; color: var(--text); padding: 6px; width: 120px; outline: none; font-weight: 600; font-size: 13px; }
+        .user-field .field-icon { flex-shrink:0; opacity:0.45; }
+        .user-field input {
+            background: transparent; border: none; color: var(--text);
+            width: 130px; outline: none; font-weight:500; font-size:13px;
+            letter-spacing: 0.2px;
+        }
+        .user-field input::placeholder { color: var(--text-dim); }
 
-        /* СЕТКА И ПАНЕЛИ */
-        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1; min-height: 0; }
+        /* Theme toggle */
+        .theme-btn {
+            width: 38px; height: 38px;
+            border-radius: 12px;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            display: flex; align-items:center; justify-content:center;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+            flex-shrink:0;
+            color: var(--text-dim);
+        }
+        .theme-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .theme-btn:active { transform: scale(0.93); }
+
+        /* GRID */
+        .dashboard-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; flex:1; }
         .panel {
-            background: var(--glass); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
-            border: 1px solid var(--glass-border); border-radius: 28px; padding: 24px;
-            display: flex; flex-direction: column; position: relative; overflow: hidden;
+            background: var(--glass);
+            backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 22px;
+            display: flex; flex-direction:column;
+            position: relative;
+            box-shadow: var(--card-shadow);
+            min-height: 400px;
         }
-        .panel-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); margin-bottom: 15px; }
+        /* IMPORT panel specifically — no height cap, grows with content */
+        .panel-import {
+            overflow: visible;
+        }
+        .panel-title {
+            font-size: 10px; font-weight:700;
+            text-transform: uppercase; letter-spacing:2px;
+            color: var(--text-dim);
+            margin-bottom: 14px;
+        }
 
-        .composer { background: var(--input-bg); border-radius: 18px; flex: 1; display: flex; flex-direction: column; padding: 15px; }
-        textarea { flex: 1; background: transparent; border: none; resize: none; color: var(--text); font-size: 16px; outline: none; line-height: 1.5; }
+        /* COMPOSER */
+        .composer {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 18px;
+            flex:1; display:flex; flex-direction:column;
+            padding: 14px 16px;
+            transition: border-color 0.2s;
+        }
+        .composer:focus-within { border-color: var(--accent); }
+        textarea {
+            flex:1; background:transparent; border:none;
+            resize:none; color:var(--text); font-size:15px;
+            outline:none; line-height:1.6; font-weight:400;
+        }
+        textarea::placeholder { color: var(--text-dim); }
 
-        #filePreview { display: none; background: var(--bg); padding: 8px 12px; border-radius: 10px; margin-bottom: 10px; align-items: center; gap: 10px; font-size: 12px; border: 1px solid rgba(128,128,128,0.1); }
+        #filePreview {
+            display:none; background:rgba(0,0,0,0.04); padding:8px 12px;
+            border-radius:10px; margin-bottom:10px;
+            align-items:center; gap:10px; font-size:12px;
+            border: 1px solid var(--input-border);
+            color: var(--text-dim);
+        }
+        [data-theme="dark"] #filePreview { background: rgba(255,255,255,0.04); }
 
-        .action-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 20px; }
-        
-        /* ГЛАВНАЯ КНОПКА ПОЛУЧЕНИЯ */
+        .composer-actions {
+            margin-top: 12px;
+            display:flex; justify-content:space-between; align-items:center;
+        }
+
+        /* FILES btn */
+        .attach-btn {
+            display:flex; align-items:center; gap:8px;
+            cursor:pointer; color: var(--text-dim);
+            padding: 8px 12px;
+            border-radius: 10px;
+            transition: background 0.2s, color 0.2s;
+            font-size: 12px; font-weight:600; letter-spacing:0.5px;
+            text-transform: uppercase;
+        }
+        .attach-btn:hover { background: rgba(0,0,0,0.05); color: var(--text); }
+        [data-theme="dark"] .attach-btn:hover { background: rgba(255,255,255,0.07); }
+        input[type="file"] { display:none; }
+
+        /* Send btn */
+        .btn-send {
+            background: var(--accent);
+            color: white; border:none;
+            width: 46px; height: 46px;
+            border-radius: 14px;
+            display:flex; align-items:center; justify-content:center;
+            cursor:pointer;
+            transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s, opacity 0.2s;
+            box-shadow: 0 4px 16px var(--accent-glow), 0 1px 3px rgba(0,0,0,0.15);
+            flex-shrink:0;
+        }
+        .btn-send:hover { transform: translateY(-2px); box-shadow: 0 8px 24px var(--accent-glow), 0 2px 6px rgba(0,0,0,0.12); }
+        .btn-send:active { transform: scale(0.92); }
+
+        /* RECEIVER */
+        .action-zone { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:18px; }
         .power-button {
-            width: 130px; height: 130px; background: var(--accent); border-radius: 50%; border: none; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; color: white;
-            box-shadow: 0 10px 40px var(--accent-glow); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 120px; height:120px;
+            background: var(--accent);
+            border-radius: 50%; border:none; cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+            color:white;
+            box-shadow: 0 8px 32px var(--accent-glow), 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s;
         }
-        .power-button:active { transform: scale(0.92); }
-        
-        .pulse { animation: pulse-ring 1.5s infinite; }
+        .power-button:hover { transform: scale(1.04); box-shadow: 0 14px 48px var(--accent-glow); }
+        .power-button:active { transform: scale(0.94); }
+        .pulse { animation: pulse-ring 2s infinite; }
         @keyframes pulse-ring {
-            0% { transform: scale(.95); box-shadow: 0 0 0 0 var(--accent-glow); }
-            70% { transform: scale(1); box-shadow: 0 0 0 25px rgba(128, 128, 128, 0); }
-            100% { transform: scale(.95); box-shadow: 0 0 0 0 rgba(128, 128, 128, 0); }
+            0% { box-shadow: 0 0 0 0 var(--accent-glow), 0 8px 32px var(--accent-glow); }
+            70% { box-shadow: 0 0 0 28px rgba(128,128,128,0), 0 8px 32px var(--accent-glow); }
+            100% { box-shadow: 0 0 0 0 rgba(128,128,128,0), 0 8px 32px var(--accent-glow); }
         }
 
-        .received-box { background: var(--input-bg); border-radius: 18px; padding: 15px; font-size: 15px; white-space: pre-wrap; word-break: break-word; flex: 1; overflow-y: auto; display: none; }
-        
-        /* КНОПКА ОТПРАВКИ (САМОЛЕТИК) */
-        .btn-send { 
-            background: var(--accent); color: white; border: none; 
-            width: 50px; height: 50px; border-radius: 15px; 
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: 0.3s; 
-            box-shadow: 0 4px 15px var(--accent-glow);
+        /* Packets feed */
+        .packets-feed {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 2px;
+            padding-bottom: 50px; /* space for refresh btn */
         }
-        .btn-send:hover { transform: translateY(-3px) rotate(-5deg); opacity: 0.9; }
-        .btn-send:active { transform: scale(0.9); }
 
-        @media (max-width: 850px) {
-            .dashboard-grid { grid-template-columns: 1fr; overflow-y: auto; }
-            .app-container { overflow-y: auto; }
-            body { overflow: auto; }
-            .panel { min-height: 380px; }
-            .search-area { margin-left: 0; flex: 1; }
+        .packet-card {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 13.5px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.6;
+            color: var(--text);
+            animation: cardIn 0.28s cubic-bezier(0.34,1.56,0.64,1);
+            flex-shrink: 0;
         }
-        input[type="file"] { display: none; }
+        .packet-card .packet-meta {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+            opacity: 0.7;
+        }
+        .packet-card.has-file {
+            border-color: var(--accent);
+            border-opacity: 0.4;
+        }
+        .packet-card .file-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 6px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .packet-card .file-link:hover { opacity: 0.75; }
+
+        @keyframes cardIn {
+            from { opacity:0; transform: translateY(6px) scale(0.98); }
+            to   { opacity:1; transform: translateY(0) scale(1); }
+        }
+
+        #msgDisplay {
+            font-size:10px; font-weight:700;
+            color:var(--text-dim); letter-spacing:2.5px;
+            text-transform:uppercase;
+        }
+
+        @media (max-width:850px) {
+            .dashboard-grid { grid-template-columns:1fr; }
+            .user-field { margin-left:0; flex:1; }
+        }
+
+        /* Spinning loader */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinning { animation: spin 0.8s linear infinite; }
+
+        /* Refresh button — always visible, minimal */
+        .btn-refresh {
+            position: absolute;
+            bottom: 18px; right: 18px;
+            display: flex;
+            align-items: center; justify-content: center;
+            width: 34px; height: 34px;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-dim);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), background 0.2s, color 0.2s, box-shadow 0.2s;
+            z-index: 10;
+        }
+        .btn-refresh:hover { transform: scale(1.1); }
+        .btn-refresh:active { transform: scale(0.92); }
+        .btn-refresh.has-new {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            box-shadow: 0 4px 14px var(--accent-glow);
+            animation: slideUp 0.25s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .btn-refresh.spinning-refresh svg {
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes slideUp {
+            from { opacity:0; transform: scale(0.8); }
+            to   { opacity:1; transform: scale(1); }
+        }
     </style>
 </head>
 <body data-theme="light">
 
-    <div id="canvas-container"><canvas id="liquid-canvas"></canvas></div>
+<div id="canvas-container"><canvas id="liquid-canvas"></canvas></div>
 
-    <div class="app-container">
-        <header class="top-nav">
-            <div class="brand-group">
-                <div class="quasar-logo">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="3" fill="white"></circle>
-                        <path d="M12 2v3M12 19v3M2 12h3M19 12h3M18.5 5.5l-2 2M7.5 16.5l-2 2M5.5 5.5l2 2M16.5 16.5l2 2"></path>
+<div class="app-container">
+    <header class="top-nav">
+        <div class="brand-group">
+            <div class="quasar-logo">
+                <!-- Q monogram / prism icon -->
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12,2 22,8 22,16 12,22 2,16 2,8"/>
+                    <circle cx="12" cy="12" r="3" fill="white" stroke="none"/>
+                </svg>
+            </div>
+            <span class="brand-name">SEPTIMA</span>
+        </div>
+
+        <div class="user-field">
+            <!-- minimal @ icon -->
+            <svg class="field-icon" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="10" cy="10" r="3.5"/>
+                <path d="M13.5 10a3.5 3.5 0 1 0-3.5 3.5h0a3.5 3.5 0 0 0 3.5-3.5v-1.5a6 6 0 1 1-1.78 4.24"/>
+            </svg>
+            <input type="text" id="chatIdInput" placeholder="ID or @username">
+        </div>
+
+        <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle theme">
+            <svg id="theme-icon-sun" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <circle cx="10" cy="10" r="3.5"/>
+                <line x1="10" y1="1.5" x2="10" y2="3.5"/>
+                <line x1="10" y1="16.5" x2="10" y2="18.5"/>
+                <line x1="1.5" y1="10" x2="3.5" y2="10"/>
+                <line x1="16.5" y1="10" x2="18.5" y2="10"/>
+                <line x1="4.1" y1="4.1" x2="5.5" y2="5.5"/>
+                <line x1="14.5" y1="14.5" x2="15.9" y2="15.9"/>
+                <line x1="4.1" y1="15.9" x2="5.5" y2="14.5"/>
+                <line x1="14.5" y1="5.5" x2="15.9" y2="4.1"/>
+            </svg>
+            <svg id="theme-icon-moon" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="display:none">
+                <path d="M17 10.5A7 7 0 1 1 9.5 3a5 5 0 0 0 7.5 7.5z"/>
+            </svg>
+        </button>
+    </header>
+
+    <div class="dashboard-grid">
+        <!-- TRANSMITTER -->
+        <section class="panel">
+            <h2 class="panel-title">EXPORT</h2>
+            <div class="composer">
+                <div id="filePreview">
+                    <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                        <path d="M13 2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7z"/>
+                        <polyline points="13 2 13 7 18 7"/>
+                    </svg>
+                    <span id="fileNameDisplay" style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+                    <svg onclick="clearFile()" style="cursor:pointer; opacity:0.5; flex-shrink:0;" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/>
                     </svg>
                 </div>
-                <span class="brand-name">QUASAR</span>
-                <span class="bot-tag">@files_pages_bot</span>
+                <textarea id="textInput" placeholder="Enter..."></textarea>
             </div>
-
-            <div class="search-area">
-                <i data-lucide="shield" size="16" color="var(--accent)"></i>
-                <input type="text" id="chatIdInput" placeholder="ID / User" value="9548">
+            <div class="composer-actions">
+                <label class="attach-btn">
+                    <input type="file" id="fileInput">
+                    <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16.5 10.5l-6.5 6.5a4.5 4.5 0 0 1-6.36-6.36l7-7a3 3 0 0 1 4.24 4.24l-7 7a1.5 1.5 0 0 1-2.12-2.12L12 6"/>
+                    </svg>
+                    <span>FILES</span>
+                </label>
+                <button class="btn-send" id="btnSend" onclick="send()">
+                    <svg id="sendIcon" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" stroke-opacity="0.5"/>
+                        <path d="M13 6l6 6-6 6"/>
+                    </svg>
+                </button>
             </div>
+        </section>
 
-            <button class="power-button" style="width: 42px; height: 42px; flex-shrink: 0; box-shadow: none;" onclick="toggleTheme()">
-                <i data-lucide="sun" id="theme-icon" size="20"></i>
+        <!-- RECEIVER -->
+        <section class="panel panel-import" style="position:relative;">
+            <h2 class="panel-title">IMPORT</h2>
+            <div id="packetsFeed" class="packets-feed"></div>
+            <div class="action-zone" id="actionZone">
+                <button class="power-button" id="actionBtn" onclick="handleAction()">
+                    <svg viewBox="0 0 32 32" width="40" height="40" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="16" y1="5" x2="16" y2="22"/>
+                        <polyline points="8,15 16,23 24,15"/>
+                        <line x1="6" y1="27" x2="26" y2="27"/>
+                    </svg>
+                </button>
+                <p id="msgDisplay">SCANNING</p>
+            </div>
+            <button class="btn-refresh" id="refreshBtn" onclick="flushPending()" title="New packets">
+                <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16.5 9A6.5 6.5 0 1 0 15 13.5"/>
+                    <polyline points="16.5 4 16.5 9 12 9"/>
+                </svg>
             </button>
-        </header>
-
-        <div class="dashboard-grid">
-            <section class="panel">
-                <h2 class="panel-title">Transmitter</h2>
-                <div class="composer">
-                    <div id="filePreview">
-                        <i data-lucide="file" size="14"></i>
-                        <span id="fileNameDisplay" style="flex:1; overflow:hidden; text-overflow:ellipsis;"></span>
-                        <i data-lucide="x" size="14" style="cursor:pointer" onclick="clearFile()"></i>
-                    </div>
-                    <textarea id="textInput" placeholder="Enter data packet..."></textarea>
-                </div>
-                <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
-                    <label style="cursor: pointer; color: var(--text-dim); display: flex; align-items: center; gap: 8px;">
-                        <input type="file" id="fileInput">
-                        <i data-lucide="paperclip" size="20"></i>
-                        <span style="font-size: 13px; font-weight: 800; letter-spacing: 0.5px;">FILES</span>
-                    </label>
-                    <button class="btn-send" id="btnLabel" onclick="send()">
-                        <i data-lucide="send-horizontal" id="sendIcon" size="22"></i>
-                    </button>
-                </div>
-            </section>
-
-            <section class="panel">
-                <h2 class="panel-title">Receiver</h2>
-                <div id="receivedTextBox" class="received-box"></div>
-                <div class="action-zone" id="actionZone">
-                    <button class="power-button" id="actionBtn" onclick="handleAction()">
-                        <i data-lucide="download" size="54"></i>
-                    </button>
-                    <p id="msgDisplay" style="font-size: 11px; font-weight: 800; color: var(--text-dim); letter-spacing: 2px;">SCANNING</p>
-                </div>
-            </section>
-        </div>
+        </section>
     </div>
+</div>
 
-    <script>
-        const TOKEN = '8571009265:AAFsKnE0bnneIhmQg_0BEifTbASvm8fvdCc';
-        let lastId = 0;
-        let pText = "";
-        let pUrl = "";
+<script>
+    const TOKEN = '8571009265:AAEx-V9v4P3n_UjiH5ZEKl2dSiZvU-Y8d_8';
+    let lastId = 0;
 
-        function getTargetInfo() {
-            let val = document.getElementById('chatIdInput').value.trim();
-            if (!val) return null;
-            if (val === "9548") return "2068847868";
-            return val.replace('@', '');
+    function getTargetId() {
+        const val = document.getElementById('chatIdInput').value.trim();
+        if (!val) return null;
+        // Resolve known aliases
+        if (val === "9548") return "2068847868";
+        return val;
+    }
+
+    function normalizeChatId(raw) {
+        const isNumeric = /^-?\d+$/.test(raw);
+        if (!isNumeric && !raw.startsWith('@')) return '@' + raw;
+        return raw;
+    }
+
+    // File preview
+    document.getElementById('fileInput').onchange = e => {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('fileNameDisplay').innerText = file.name;
+            document.getElementById('filePreview').style.display = 'flex';
         }
+    };
 
-        document.getElementById('fileInput').onchange = e => {
-            const file = e.target.files[0];
-            if (file) {
-                document.getElementById('fileNameDisplay').innerText = file.name;
-                document.getElementById('filePreview').style.display = 'flex';
-            }
-        };
+    function clearFile() {
+        document.getElementById('fileInput').value = "";
+        document.getElementById('filePreview').style.display = 'none';
+    }
 
-        function clearFile() {
-            document.getElementById('fileInput').value = "";
-            document.getElementById('filePreview').style.display = 'none';
+    // Icons as SVG strings
+    const icons = {
+        send: `<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14" stroke-opacity="0.5"/>
+            <path d="M13 6l6 6-6 6"/>
+        </svg>`,
+        loading: `<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" class="spinning">
+            <circle cx="10" cy="10" r="7" stroke-opacity="0.25"/>
+            <path d="M10 3a7 7 0 0 1 7 7" stroke-opacity="1"/>
+        </svg>`,
+        check: `<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4,10 8,14 16,6"/>
+        </svg>`,
+        error: `<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+            <circle cx="10" cy="10" r="7"/>
+            <line x1="10" y1="6" x2="10" y2="10"/>
+            <circle cx="10" cy="14" r="0.5" fill="white"/>
+        </svg>`
+    };
+
+    function setSendIcon(name) {
+        const el = document.getElementById('btnSend');
+        el.innerHTML = icons[name];
+    }
+
+    async function send() {
+        const target = getTargetId();
+        if (!target) { 
+            document.getElementById('chatIdInput').style.borderColor = 'var(--accent)';
+            document.getElementById('chatIdInput').focus();
+            return; 
         }
+        const chatId = normalizeChatId(target);
+        const txt = document.getElementById('textInput').value.trim();
+        const f = document.getElementById('fileInput').files[0];
+        if (!txt && !f) return;
 
-        async function send() {
-            const target = getTargetInfo();
-            if (!target) return;
-            let chatId = target;
-            const isNumeric = /^-?\d+$/.test(chatId);
-            if (!isNumeric && !chatId.startsWith('@')) chatId = '@' + chatId;
-            const txt = document.getElementById('textInput').value;
-            const f = document.getElementById('fileInput').files[0];
-            
-            const sendIcon = document.getElementById('sendIcon');
-            sendIcon.setAttribute('data-lucide', 'loader-2');
-            lucide.createIcons();
+        setSendIcon('loading');
 
-            try {
-                let url = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
-                let body;
-                if (f) {
-                    url = `https://api.telegram.org/bot${TOKEN}/sendDocument`;
-                    body = new FormData();
-                    body.append('chat_id', chatId);
-                    body.append('document', f);
-                    if (txt) body.append('caption', txt);
-                    await fetch(url, { method: 'POST', body: body });
-                } else if (txt) {
-                    await fetch(url, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ chat_id: chatId, text: txt })
-                    });
-                }
-                document.getElementById('textInput').value = "";
-                clearFile();
-                sendIcon.setAttribute('data-lucide', 'check');
-            } catch (e) { 
-                sendIcon.setAttribute('data-lucide', 'alert-circle');
-            }
-            lucide.createIcons();
-            setTimeout(() => {
-                sendIcon.setAttribute('data-lucide', 'send-horizontal');
-                lucide.createIcons();
-            }, 2000);
-        }
-
-        async function poll() {
-            try {
-                const target = getTargetInfo();
-                const r = await fetch(`https://api.telegram.org/bot${TOKEN}/getUpdates?offset=${lastId + 1}&timeout=30`);
-                const d = await r.json();
-                if (d.result?.length > 0) {
-                    for (const m of d.result) {
-                        lastId = m.update_id;
-                        if (m.message && target) {
-                            const senderId = m.message.from.id.toString();
-                            const senderUser = (m.message.from.username || "").toLowerCase();
-                            if (senderId === target || senderUser === target.toLowerCase()) {
-                                pText = m.message.text || m.message.caption || "";
-                                const fId = m.message.document?.file_id || (m.message.photo ? m.message.photo[m.message.photo.length - 1].file_id : null);
-                                if (fId) {
-                                    const fi = await fetch(`https://api.telegram.org/bot${TOKEN}/getFile?file_id=${fId}`);
-                                    const fj = await fi.json();
-                                    pUrl = `https://api.telegram.org/file/bot${TOKEN}/${fj.result.file_path}`;
-                                }
-                                document.getElementById('actionBtn').classList.add('pulse');
-                                document.getElementById('msgDisplay').innerText = "PACKET RECEIVED";
-                                document.getElementById('msgDisplay').style.color = "var(--accent)";
-                            }
-                        }
-                    }
-                }
-            } catch (e) {}
-            setTimeout(poll, 2000);
-        }
-
-        function handleAction() {
-            if (!pText && !pUrl) return;
-            const displayBox = document.getElementById('receivedTextBox');
-            displayBox.style.display = 'block';
-            displayBox.innerText = pText || "Binary Data Stream";
-            if (pUrl) window.open(pUrl, '_blank');
-            document.getElementById('actionBtn').classList.remove('pulse');
-            document.getElementById('msgDisplay').innerText = "SCANNING";
-            document.getElementById('msgDisplay').style.color = "var(--text-dim)";
-            pText = ""; pUrl = "";
-        }
-
-        lucide.createIcons();
-        function toggleTheme() {
-            const b = document.body;
-            const isL = b.getAttribute('data-theme') === 'light';
-            b.setAttribute('data-theme', isL ? 'dark' : 'light');
-            document.getElementById('theme-icon').setAttribute('data-lucide', isL ? 'moon' : 'sun');
-            lucide.createIcons();
-        }
-        const canvas = document.getElementById('liquid-canvas');
-        const ctx = canvas.getContext('2d');
-        let w, h, particles = [];
-        function initCanvas() {
-            w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight;
-            particles = [];
-            for(let i=0; i<5; i++) {
-                particles.push({
-                    x: Math.random() * w, y: Math.random() * h, r: Math.random() * 400 + 200,
-                    vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2,
-                    color: i % 2 === 0 ? '#ff3b30' : '#007aff'
+        try {
+            if (f) {
+                const url = `https://api.telegram.org/bot${TOKEN}/sendDocument`;
+                const body = new FormData();
+                body.append('chat_id', chatId);
+                body.append('document', f);
+                if (txt) body.append('caption', txt);
+                const res = await fetch(url, { method:'POST', body });
+                const json = await res.json();
+                if (!json.ok) throw new Error(json.description);
+            } else if (txt) {
+                const url = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
+                const res = await fetch(url, {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ chat_id: chatId, text: txt })
                 });
+                const json = await res.json();
+                if (!json.ok) throw new Error(json.description);
             }
+            document.getElementById('textInput').value = "";
+            clearFile();
+            setSendIcon('check');
+        } catch(e) {
+            console.error('Send error:', e);
+            setSendIcon('error');
+            showToast('ОШИБКА: ' + (e.message || 'Нет связи'));
         }
-        function draw() {
-            ctx.clearRect(0, 0, w, h);
-            particles.forEach(p => {
-                p.x += p.vx; p.y += p.vy;
-                if(p.x < 0 || p.x > w) p.vx *= -1; if(p.y < 0 || p.y > h) p.vy *= -1;
-                let grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
-                grad.addColorStop(0, p.color); grad.addColorStop(1, 'transparent');
-                ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+
+        setTimeout(() => setSendIcon('send'), 2200);
+    }
+
+    // ── IMPORT logic ──────────────────────────────────────────
+    // Single source of truth: one async loop, never runs in parallel.
+    // Rule: lastId is advanced for the ENTIRE batch before any message is processed.
+    // Rule: pendingQueue is only written inside the loop, never from outside.
+
+    let pendingQueue = [];
+    let loopRunning  = false;  // true while the async loop body is executing
+    let forceWakeup  = null;   // resolve() to interrupt the 1s sleep early
+
+    function sleep(ms) {
+        return new Promise(resolve => {
+            const t = setTimeout(resolve, ms);
+            forceWakeup = () => { clearTimeout(t); resolve(); };
+        });
+    }
+
+    function getTime() {
+        return new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    }
+
+    function renderCard(packet) {
+        const feed = document.getElementById('packetsFeed');
+        const card = document.createElement('div');
+        card.className = 'packet-card' + (packet.url ? ' has-file' : '');
+        const meta = document.createElement('div');
+        meta.className = 'packet-meta';
+        meta.textContent = packet.time;
+        card.appendChild(meta);
+        if (packet.txt) {
+            const body = document.createElement('div');
+            body.textContent = packet.txt;
+            card.appendChild(body);
+        }
+        if (packet.url) {
+            const link = document.createElement('a');
+            link.className = 'file-link';
+            link.href = packet.url;
+            link.target = '_blank';
+            link.innerHTML = `<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 2H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V5z"/><polyline points="10 2 10 5 13 5"/></svg> ${packet.fileName || 'Open file'}`;
+            card.appendChild(link);
+        }
+        feed.appendChild(card);
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    function showFeed() {
+        document.getElementById('actionZone').style.display = 'none';
+        document.getElementById('packetsFeed').style.display = 'flex';
+    }
+
+    function setRefreshState(hasNew) {
+        const rb = document.getElementById('refreshBtn');
+        hasNew ? rb.classList.add('has-new') : rb.classList.remove('has-new');
+    }
+
+    function setRefreshSpinning(on) {
+        const rb = document.getElementById('refreshBtn');
+        on ? rb.classList.add('spinning-refresh') : rb.classList.remove('spinning-refresh');
+    }
+
+    function flushPending() {
+        if (!pendingQueue.length) return;
+        showFeed();
+        pendingQueue.splice(0).forEach(renderCard);
+        setRefreshState(false);
+        document.getElementById('actionBtn').classList.remove('pulse');
+        setStatus('SCANNING', false);
+    }
+
+    function setStatus(text, active) {
+        const el = document.getElementById('msgDisplay');
+        el.innerText = text;
+        el.style.color = active ? 'var(--accent)' : 'var(--text-dim)';
+    }
+
+    function notifyNewPackets() {
+        document.getElementById('actionBtn').classList.add('pulse');
+        const n = pendingQueue.length;
+        setStatus(n > 1 ? `${n} PACKETS` : 'PACKET RECEIVED', true);
+        setRefreshState(true);
+    }
+
+    // Big button: flush if pending, otherwise wake up the loop immediately for a fresh check
+    function handleAction() {
+        if (pendingQueue.length > 0) { flushPending(); return; }
+        const target = getTargetId();
+        setStatus(target ? 'CHECKING...' : 'NO ID SET', true);
+        setRefreshSpinning(true);
+        document.getElementById('actionBtn').classList.add('pulse');
+        // Interrupt the sleep so the loop fires NOW
+        if (forceWakeup) forceWakeup();
+    }
+
+    async function fetchWithTimeout(url, ms, opts = {}) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), ms);
+        try {
+            const res = await fetch(url, { ...opts, signal: ctrl.signal });
+            clearTimeout(timer);
+            return res;
+        } catch(e) {
+            clearTimeout(timer);
+            throw e;
+        }
+    }
+
+    async function getFileUrl(fileId) {
+        try {
+            const r = await fetchWithTimeout(
+                `https://api.telegram.org/bot${TOKEN}/getFile?file_id=${fileId}`,
+                6000
+            );
+            const j = await r.json();
+            if (j.ok) return `https://api.telegram.org/file/bot${TOKEN}/${j.result.file_path}`;
+        } catch(e) {}
+        return "";
+    }
+
+    // THE loop — runs forever, one iteration at a time, never overlaps with itself
+    async function pollLoop() {
+        while (true) {
+            loopRunning = true;
+            try {
+                const res = await fetchWithTimeout(
+                    `https://api.telegram.org/bot${TOKEN}/getUpdates?offset=${lastId + 1}&timeout=0&limit=100`,
+                    8000
+                );
+                const data = await res.json();
+
+                if (data.ok && data.result.length > 0) {
+                    // Advance lastId for the whole batch ATOMICALLY before touching any message
+                    lastId = data.result[data.result.length - 1].update_id;
+
+                    const target = getTargetId();
+                    let gotNew = false;
+
+                    for (const upd of data.result) {
+                        const msg = upd.message || upd.channel_post;
+                        if (!msg) continue;
+
+                        if (target) {
+                            const fromId   = String(msg.from?.id  || "");
+                            const chatId   = String(msg.chat?.id  || "");
+                            const fromUser = (msg.from?.username  || "").toLowerCase();
+                            const clean    = target.replace('@','').toLowerCase();
+                            const isNum    = /^\-?\d+$/.test(target);
+                            const ok       = isNum ? (fromId === target || chatId === target)
+                                                   : fromUser === clean;
+                            if (!ok) continue;
+                        }
+
+                        const txt = msg.text || msg.caption || "";
+                        let url = "", fileName = "";
+
+                        const doc     = msg.document;
+                        const photo   = msg.photo;
+                        const audio   = msg.audio || msg.voice;
+                        const video   = msg.video || msg.video_note;
+                        const sticker = msg.sticker;
+                        const fObj    = doc || audio || video || sticker
+                                     || (photo ? photo[photo.length-1] : null);
+
+                        if (fObj?.file_id) {
+                            url      = await getFileUrl(fObj.file_id);
+                            fileName = doc?.file_name || audio?.file_name || video?.file_name
+                                     || (sticker ? 'sticker.webp' : photo ? 'photo.jpg' : '');
+                        }
+
+                        if (!txt && !url) continue;
+                        pendingQueue.push({ txt, url, fileName, time: getTime() });
+                        gotNew = true;
+                    }
+
+                    if (gotNew) notifyNewPackets();
+                }
+            } catch(e) { 
+                console.warn('Poll error:', e.message || e);
+                if (e.message && e.message.includes('401')) {
+                    setStatus('TOKEN INVALID', true);
+                }
+            }
+
+            loopRunning = false;
+            setRefreshSpinning(false);
+
+            // If no new packets after a force-check, show feedback
+            if (document.getElementById('msgDisplay').innerText === 'CHECKING...') {
+                const target = getTargetId();
+                if (!pendingQueue.length) {
+                    const user = target ? `· ${target.replace('@','')}` : '';
+                    setStatus(`NO NEW ${user}`.trim(), false);
+                    document.getElementById('actionBtn').classList.remove('pulse');
+                    setTimeout(() => {
+                        if (document.getElementById('msgDisplay').innerText.startsWith('NO NEW'))
+                            setStatus('SCANNING', false);
+                    }, 3000);
+                } else {
+                    notifyNewPackets();
+                }
+            }
+
+            await sleep(1000); // wait 1s, or less if forceWakeup() is called
+        }
+    }
+    // ── end IMPORT logic ───────────────────────────────────────
+
+    function toggleTheme() {
+        const body = document.body;
+        const isLight = body.getAttribute('data-theme') === 'light';
+        body.setAttribute('data-theme', isLight ? 'dark' : 'light');
+        document.getElementById('theme-icon-sun').style.display = isLight ? 'none' : 'block';
+        document.getElementById('theme-icon-moon').style.display = isLight ? 'block' : 'none';
+
+        // update canvas particles
+        updateParticleColors(isLight ? 'dark' : 'light');
+    }
+
+    // Canvas background
+    const canvas = document.getElementById('liquid-canvas');
+    const ctx = canvas.getContext('2d');
+    let w, h, particles = [];
+
+    function updateParticleColors(theme) {
+        const isDark = theme === 'dark';
+        particles.forEach((p, i) => {
+            p.color = (i % 2 === 0)
+                ? (isDark ? '#2997ff' : '#0a84ff')
+                : (isDark ? '#5e5ce6' : '#3a8ef6');
+        });
+    }
+
+    function initCanvas() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+        particles = [];
+        for (let i = 0; i < 5; i++) {
+            particles.push({
+                x: Math.random() * w, y: Math.random() * h,
+                r: Math.random() * 380 + 200,
+                vx: (Math.random() - 0.5) * 1.5,
+                vy: (Math.random() - 0.5) * 1.5,
+                color: i % 2 === 0 ? '#0a84ff' : '#5e5ce6'
             });
-            requestAnimationFrame(draw);
         }
-        window.addEventListener('resize', initCanvas);
-        initCanvas(); draw(); poll();
-    </script>
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, w, h);
+        particles.forEach(p => {
+            p.x += p.vx; p.y += p.vy;
+            if (p.x < 0 || p.x > w) p.vx *= -1;
+            if (p.y < 0 || p.y > h) p.vy *= -1;
+            const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+            grad.addColorStop(0, p.color);
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+        });
+        requestAnimationFrame(draw);
+    }
+
+    // Toast notification
+    function showToast(msg) {
+        let t = document.getElementById('toast');
+        if (!t) {
+            t = document.createElement('div');
+            t.id = 'toast';
+            t.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#ff3b30;color:white;padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;letter-spacing:1px;z-index:9999;opacity:0;transition:opacity 0.3s;pointer-events:none;';
+            document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.style.opacity = '1';
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => t.style.opacity = '0', 3500);
+    }
+
+    window.addEventListener('resize', initCanvas);
+    initCanvas(); draw();
+    pollLoop(); // start the single infinite loop
+
+    // Init send icon
+    setSendIcon('send');
+</script>
 </body>
 </html>
