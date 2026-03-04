@@ -125,9 +125,17 @@
             box-shadow: var(--card-shadow);
             min-height: 400px;
         }
-        /* IMPORT panel specifically — no height cap, grows with content */
+        /* EXPORT & IMPORT panels grow up to 1.7× base, then scroll */
+        .dashboard-grid .panel {
+            max-height: calc(400px * 1.7); /* 680px */
+            overflow-y: auto;
+        }
+        .dashboard-grid .panel::-webkit-scrollbar { width: 3px; }
+        .dashboard-grid .panel::-webkit-scrollbar-track { background: transparent; }
+        .dashboard-grid .panel::-webkit-scrollbar-thumb { background: var(--input-border); border-radius: 99px; }
+        /* IMPORT panel — grows up to 1.7× base, then scrolls */
         .panel-import {
-            overflow: visible;
+            overflow-y: auto;
         }
         .panel-title {
             font-size: 10px; font-weight:700;
@@ -141,15 +149,17 @@
             background: var(--input-bg);
             border: 1px solid var(--input-border);
             border-radius: 18px;
-            flex:1; display:flex; flex-direction:column;
+            display:flex; flex-direction:column;
             padding: 14px 16px;
             transition: border-color 0.2s;
         }
         .composer:focus-within { border-color: var(--accent); }
         textarea {
-            flex:1; background:transparent; border:none;
+            background:transparent; border:none;
             resize:none; color:var(--text); font-size:15px;
             outline:none; line-height:1.6; font-weight:400;
+            min-height: calc(1.6em * 5);
+            overflow-y: hidden;
         }
         textarea::placeholder { color: var(--text-dim); }
 
@@ -344,14 +354,12 @@
         .panel-ai {
             grid-column: 1 / -1;
             min-height: 500px;
-            max-height: 850px; /* 500px × 1.7 */
             display: flex;
             flex-direction: column;
         }
 
         .ai-feed {
             flex: 1;
-            min-height: 0; /* allows flex child to shrink and enable inner scroll */
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -615,18 +623,20 @@
             gap: 16px;
         }
 
-        /* ── GLOBAL CHAT SIDEBAR (right, 400px) ── */
+        /* ── GLOBAL CHAT SIDEBAR (right, 400px) — stretches to full height of left content ── */
         .gchat-sidebar {
             width: 400px;
             flex-shrink: 0;
             display: flex;
             flex-direction: column;
+            align-self: stretch;
         }
         .panel-gchat {
             flex: 1;
             display: flex;
             flex-direction: column;
-            min-height: 0;
+            height: 100%;
+            overflow: hidden;
         }
         .gchat-name-row {
             display: flex; align-items: center; gap: 7px;
@@ -728,7 +738,11 @@
             resize: none; color: var(--text); font-size: 12.5px;
             outline: none; line-height: 1.5; font-weight: 400;
             font-family: var(--font);
-            height: calc(1.5em * 2); overflow-y: auto;
+            min-height: 0 !important;
+            height: calc(1.5em * 1.5);
+            max-height: calc(1.5em * 5);
+            overflow-y: hidden;
+            transition: height 0.15s ease;
         }
         #gchatInput::placeholder { color: var(--text-dim); }
         .gchat-file-preview {
@@ -929,7 +943,7 @@
                 <line x1="3" y1="3" x2="11" y2="11"/><line x1="11" y1="3" x2="3" y2="11"/>
               </svg>
             </div>
-            <textarea id="gchatInput" placeholder="Message everyone…"
+            <textarea id="gchatInput" rows="1" placeholder="Message everyone…"
               onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();gchatSend();}"></textarea>
             <div class="composer-actions">
               <label class="attach-btn" title="Attach file" style="padding:6px 10px;">
@@ -953,6 +967,16 @@
 </div>
 
 <script>
+    // ── AUTO-RESIZE: EXPORT textarea grows panel up to 1.7× ─────────────
+    const exportTa = document.getElementById('textInput');
+    function resizeExportTa() {
+        exportTa.style.height = 'auto';
+        exportTa.style.height = exportTa.scrollHeight + 'px';
+    }
+    exportTa.addEventListener('input', resizeExportTa);
+    resizeExportTa();
+    // ─────────────────────────────────────────────────────────────────────
+
     const TOKEN = '8571009265:AAEx-V9v4P3n_UjiH5ZEKl2dSiZvU-Y8d_8';
     let lastId = 0;
 
@@ -1759,6 +1783,20 @@
         };
         reader.readAsDataURL(file);
     };
+
+    // ── AUTO-RESIZE gchatInput up to 5 lines ─────────────────────────
+    const gcInput = document.getElementById('gchatInput');
+    const gcLineH = 12.5 * 1.5; // font-size * line-height
+    function resizeGcInput() {
+        gcInput.style.height = 'auto';
+        const maxH = gcLineH * 5;
+        const newH = Math.min(gcInput.scrollHeight, maxH);
+        gcInput.style.height = newH + 'px';
+        gcInput.style.overflowY = gcInput.scrollHeight > maxH ? 'auto' : 'hidden';
+    }
+    gcInput.addEventListener('input', resizeGcInput);
+    resizeGcInput();
+    // ──────────────────────────────────────────────────────────────────
 
     function gchatClearFile() {
         gcFileData = null;
