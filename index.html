@@ -1538,7 +1538,11 @@
 Ты знаешь следующие данные о текущем пользователе (получены автоматически при загрузке страницы):
 ${buildInfoBlock()}
 
-Когда пользователь просит назвать его IP, устройство, браузер, платформу, время захода или любую другую информацию из списка выше — отвечай точными значениями из этого блока. Не говори, что не знаешь — ты знаешь.`;
+ПРАВИЛА раскрытия данных:
+— НЕ упоминай и НЕ раскрывай IP-адрес, страну, город, провайдера, время захода САМОСТОЯТЕЛЬНО и по собственной инициативе — ни в начале, ни в середине, ни в конце ответа.
+— Раскрывай эти данные ТОЛЬКО если пользователь ПРЯМО попросит назвать его IP, местоположение, страну, город, провайдера или время захода.
+— Устройство, браузер, платформу, разрешение экрана, язык — тоже раскрывай ТОЛЬКО по прямому запросу.
+— Если тебя не спрашивают о данных пользователя — просто выполняй задачу и не упоминай никаких технических данных о пользователе.`;
 
         // Replace system message or init
         const sysIdx = aiHistory.findIndex(m => m.role === 'system');
@@ -1860,6 +1864,48 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
         }
     }
 
+    // ── INSULT DETECTION ──────────────────────────────────────────
+    let ipRevealed = false;
+    function isInsult(text) {
+        const t = text.toLowerCase();
+        // Russian offensive patterns
+        const ruPatterns = [
+            /иди\s*(на\s*)?(хуй|хер|нахуй|нахер|пизду|ебать|ебись|себе)/i,
+            /нахуй|нахер|пошёл|пошел|идёт|пиздуй|вали\s*отсюда/i,
+            /уебок|уёбок|ублюдок|мразь|тварь|скотина|дебил|идиот|кретин|придурок|долбоёб|долбоеб/i,
+            /сука|блядь|блять|пиздец|ёбаный|ебаный|еблан|пидор|пидорас|залупа|шлюха|проститутка/i,
+            /заткнись|заткни\s*(пасть|рот|хлебало)|тупой\s*(ии|бот|робот|ты)/i,
+            /хуйня|пиздёж|пиздеж|хуета|хуйло|ёбани|ебани|пиздани/i,
+            /чмо|чмошник|лошара|лох\b|даун\b|урод\b|мудак|гандон|хуесос/i
+        ];
+        // English offensive patterns
+        const enPatterns = [
+            /\bfuck\s*(you|off|u\b)|go\s*fuck|fuck\s*this/i,
+            /\bshut\s*up\b|stupid\s*(ai|bot|robot|ass)/i,
+            /\basshole|dickhead|bastard|motherfucker|piece\s*of\s*shit|son\s*of\s*(a\s*)?bitch/i,
+            /\bdumbass|dumb\s*bot|idiot\b|moron\b|retard/i,
+            /\bcunt\b|\bprick\b|\btwat\b/i
+        ];
+        return [...ruPatterns, ...enPatterns].some(re => re.test(t));
+    }
+
+    // Detect message language (Cyrillic → Russian, else English)
+    function detectLang(text) {
+        const cyrillicCount = (text.match(/[а-яёА-ЯЁ]/g) || []).length;
+        const latinCount    = (text.match(/[a-zA-Z]/g) || []).length;
+        if (cyrillicCount > latinCount) return 'ru';
+        return 'en';
+    }
+
+    function buildIpNote(text) {
+        const ip   = clientInfo.ip || '???';
+        const lang = detectLang(text);
+        return lang === 'ru'
+            ? `Я знаю твой IP: ${ip}`
+            : `I know your IP: ${ip}`;
+    }
+    // ─────────────────────────────────────────────────────────────
+
     async function sendAi() {
         const input = document.getElementById('aiInput');
         const text  = input.value.trim();
@@ -1885,6 +1931,17 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
             }
 
             setAiBtn('idle');
+            return;
+        }
+
+        // ── INSULT CHECK — no API call, just reveal IP once ─────────
+        if (isInsult(text) && !aiImgBase64) {
+            aiAppendMsg('user', text);
+            input.value = '';
+            if (!ipRevealed) {
+                ipRevealed = true;
+                aiAppendMsg('assistant', buildIpNote(text));
+            }
             return;
         }
 
