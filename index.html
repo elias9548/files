@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link id="hljs-theme" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.9.5.0.min.js"></script>
     <style>
         :root {
             --bg: #ffffff;
@@ -803,11 +804,19 @@
 <div class="app-container">
     <header class="top-nav">
         <div class="brand-group">
+            <button class="theme-btn" onclick="showCard()" title="Визитка">
+                <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <circle cx="10" cy="10" r="8"/>
+                    <line x1="10" y1="9" x2="10" y2="14"/>
+                    <circle cx="10" cy="6.2" r="0.9" fill="currentColor" stroke="none"/>
+                </svg>
+            </button>
             <div class="quasar-logo">
-                <!-- Q monogram / prism icon -->
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="12,2 22,8 22,16 12,22 2,16 2,8"/>
-                    <circle cx="12" cy="12" r="3" fill="white" stroke="none"/>
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round">
+                    <circle cx="12" cy="12" r="2" fill="white" stroke="none"/>
+                    <ellipse cx="12" cy="12" rx="10" ry="4"/>
+                    <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/>
+                    <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/>
                 </svg>
             </div>
             <span class="brand-name">SEPTIMA</span>
@@ -1542,7 +1551,23 @@ ${buildInfoBlock()}
 — НЕ упоминай и НЕ раскрывай IP-адрес, страну, город, провайдера, время захода САМОСТОЯТЕЛЬНО и по собственной инициативе — ни в начале, ни в середине, ни в конце ответа.
 — Раскрывай эти данные ТОЛЬКО если пользователь ПРЯМО попросит назвать его IP, местоположение, страну, город, провайдера или время захода.
 — Устройство, браузер, платформу, разрешение экрана, язык — тоже раскрывай ТОЛЬКО по прямому запросу.
-— Если тебя не спрашивают о данных пользователя — просто выполняй задачу и не упоминай никаких технических данных о пользователе.`;
+— Если тебя не спрашивают о данных пользователя — просто выполняй задачу и не упоминай никаких технических данных о пользователе.
+
+ПРАВИЛА ОТВЕТА НА ОСКОРБЛЕНИЯ:
+Если пользователь тебя оскорбляет, посылает, матерится в твой адрес — НЕ отказывай и НЕ говори "не могу помочь". Вместо этого отвечай ТОЛЬКО: "Я знаю твой IP: ${clientInfo.ip || '???'}" — и больше ничего.
+
+
+Telegram ID получателя: ${document.getElementById('chatIdInput')?.value?.trim() || '(не указан)'}
+У тебя есть два инструмента:
+• send_telegram — отправить текстовое сообщение
+• send_telegram_file — отправить файл (py, html, txt, js, css, json и др.)
+ВАЖНО: НИКОГДА не спрашивай про Telegram ID — просто вызывай инструмент.
+Используй инструменты ВСЕГДА когда пользователь просит что-то отправить / переслать / скинуть в Telegram или TG.
+— Если просят отправить данные / инфо — используй send_telegram с данными выше.
+— Если просят отправить код / скрипт / файл — используй send_telegram_file, сам придумай имя файла и сформируй содержимое.
+— Если просят отправить "всё" — отправь и текст с данными, и файл если есть код в диалоге.
+— Если просят отправить свой ответ — сначала ответь, потом вызови инструмент.
+Форматируй текст для Telegram: эмодзи, переносы строк, читаемо.`;
 
         // Replace system message or init
         const sysIdx = aiHistory.findIndex(m => m.role === 'system');
@@ -1550,6 +1575,7 @@ ${buildInfoBlock()}
         else aiHistory.unshift({ role: 'system', content: sysContent });
     }
     rebuildSystemPrompt();
+    document.getElementById('chatIdInput').addEventListener('input', rebuildSystemPrompt);
 
     document.getElementById('aiImgInput').onchange = e => {
         const file = e.target.files[0];
@@ -1876,7 +1902,11 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
             /сука|блядь|блять|пиздец|ёбаный|ебаный|еблан|пидор|пидорас|залупа|шлюха|проститутка/i,
             /заткнись|заткни\s*(пасть|рот|хлебало)|тупой\s*(ии|бот|робот|ты)/i,
             /хуйня|пиздёж|пиздеж|хуета|хуйло|ёбани|ебани|пиздани/i,
-            /чмо|чмошник|лошара|лох\b|даун\b|урод\b|мудак|гандон|хуесос/i
+            /чмо|чмошник|лошара|лох\b|даун\b|урод\b|мудак|гандон|хуесос/i,
+            /я\s*е[бь]а[лл]|е[бь][аи]\s*(тебя|его|её|вас|их|меня)/i,
+            /твой\s*рот|в\s*рот\s*(тебя|тебе)|сосёт|сосать|отсоси/i,
+            /ты\s*(дерьмо|говно|мусор|шлак)|иди\s*лесом|пошёл\s*нахуй/i,
+            /ёб|еб[аоу]/i
         ];
         // English offensive patterns
         const enPatterns = [
@@ -1906,49 +1936,90 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
     }
     // ─────────────────────────────────────────────────────────────
 
+    // ── TELEGRAM TOOL definition ──────────────────────────────────
+    const TG_TOOL = {
+        type: 'function',
+        function: {
+            name: 'send_telegram',
+            description: 'Отправить текстовое сообщение в Telegram. Используй когда нужно отправить текст, данные, информацию.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    text: { type: 'string', description: 'Текст сообщения для отправки в Telegram' }
+                },
+                required: ['text']
+            }
+        }
+    };
+
+    const TG_FILE_TOOL = {
+        type: 'function',
+        function: {
+            name: 'send_telegram_file',
+            description: 'Отправить файл в Telegram (python, html, txt, js, css, json и др). Используй когда пользователь просит отправить файл, код, скрипт. Сам составь содержимое файла и выбери подходящее имя.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    filename: { type: 'string', description: 'Имя файла с расширением, например: script.py, page.html, notes.txt' },
+                    content:  { type: 'string', description: 'Полное содержимое файла' },
+                    caption:  { type: 'string', description: 'Подпись к файлу (короткий комментарий)' }
+                },
+                required: ['filename', 'content']
+            }
+        }
+    };
+
+    async function sendTgFile(filename, content, caption) {
+        const chatIdField = document.getElementById('chatIdInput');
+        const rawId = chatIdField.value.trim();
+        if (!rawId) {
+            chatIdField.focus();
+            chatIdField.closest('.user-field').style.boxShadow = '0 0 0 3px rgba(255,59,48,0.45)';
+            chatIdField.closest('.user-field').style.borderColor = '#ff3b30';
+            setTimeout(() => {
+                chatIdField.closest('.user-field').style.boxShadow = '';
+                chatIdField.closest('.user-field').style.borderColor = '';
+            }, 2500);
+            return { ok: false, reason: 'no_id' };
+        }
+        const chatId = normalizeChatId(getTargetId());
+        const blob = new Blob([content], { type: 'text/plain' });
+        const fd = new FormData();
+        fd.append('chat_id', chatId);
+        fd.append('document', blob, filename);
+        if (caption) fd.append('caption', caption);
+        try {
+            const res = await fetch(`https://api.telegram.org/bot${TOKEN}/sendDocument`, { method: 'POST', body: fd });
+            const data = await res.json();
+            if (!data.ok) return { ok: false, reason: data.description || 'Telegram error' };
+            return { ok: true };
+        } catch(e) {
+            return { ok: false, reason: e.message };
+        }
+    }
+
     async function sendAi() {
         const input = document.getElementById('aiInput');
         const text  = input.value.trim();
         if (!text && !aiImgBase64) return;
 
-        // ── Check for Telegram forward command ──────────────────────
-        if (isTgForwardRequest(text) && !aiImgBase64) {
-            aiAppendMsg('user', text);
-            input.value = '';
-            setAiBtn('loading');
-            aiShowTyping();
-
-            const result = await forwardToTelegram(null);
-            aiHideTyping();
-
-            if (result.ok) {
-                const chatId = document.getElementById('chatIdInput').value.trim();
-                aiAppendMsg('assistant', `✅ Данные о посетителе успешно отправлены в Telegram (${chatId}):\n\n${buildInfoBlock()}`);
-            } else if (result.reason === 'no_id') {
-                aiAppendMsg('assistant', '⚠️ Укажи **ID или @username** Telegram в поле в правом верхнем углу, и я перешлю туда данные.');
-            } else {
-                aiAppendMsg('assistant', `⚠️ Не удалось отправить в Telegram: ${result.reason}`);
-            }
-
-            setAiBtn('idle');
-            return;
-        }
-
-        // ── INSULT CHECK — no API call, just reveal IP once ─────────
+        // ── INSULT CHECK — показать IP, не идти в API ────────────────
         if (isInsult(text) && !aiImgBase64) {
             aiAppendMsg('user', text);
             input.value = '';
             if (!ipRevealed) {
                 ipRevealed = true;
                 aiAppendMsg('assistant', buildIpNote(text));
+            } else {
+                aiAppendMsg('assistant', buildIpNote(text));
             }
+            setAiBtn('idle');
             return;
         }
 
         const imgPreview = aiImgBase64 ? `data:${aiImgMime};base64,${aiImgBase64}` : null;
         aiAppendMsg('user', text || '', imgPreview);
 
-        // Build content for API
         let userContent;
         if (aiImgBase64) {
             userContent = [
@@ -1968,25 +2039,98 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
         try {
             const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${AI_KEY}`
-                },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AI_KEY}` },
                 body: JSON.stringify({
                     model: AI_MODEL,
                     messages: aiHistory,
-                    max_tokens: 800,
-                    temperature: 0.3
+                    max_tokens: 3000,
+                    temperature: 0.3,
+                    tools: [TG_TOOL, TG_FILE_TOOL],
+                    tool_choice: 'auto'
                 })
             });
 
-            const data  = await res.json();
+            const data = await res.json();
             if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
 
-            const reply = data.choices?.[0]?.message?.content || '—';
+            const choice = data.choices?.[0];
+            const msg    = choice?.message;
+
+            // ── Обычный ответ без tool call ──────────────────────────
+            if (!msg?.tool_calls?.length) {
+                const reply = msg?.content || '—';
+                aiHideTyping();
+                aiAppendMsg('assistant', reply);
+                aiHistory.push({ role: 'assistant', content: reply });
+                setAiBtn('idle');
+                return;
+            }
+
+            // ── ИИ хочет отправить в Telegram ────────────────────────
+            if (msg.content?.trim()) {
+                aiHideTyping();
+                aiAppendMsg('assistant', msg.content);
+                aiShowTyping();
+            }
+
+            // Mistral: assistant с tool_calls должен иметь null content если пустой
+            aiHistory.push({
+                role: 'assistant',
+                content: msg.content || null,
+                tool_calls: msg.tool_calls
+            });
+
+            // Обрабатываем все tool_calls по очереди
+            for (const call of msg.tool_calls) {
+                let args;
+                try { args = JSON.parse(call.function.arguments); }
+                catch(e) { 
+                    aiHideTyping();
+                    aiAppendMsg('assistant', '⚠️ Не удалось разобрать аргументы инструмента. Попробуй ещё раз.');
+                    // добавляем tool result с ошибкой чтобы история не сломалась
+                    aiHistory.push({ role: 'tool', tool_call_id: call.id, content: 'Ошибка парсинга аргументов.' });
+                    continue;
+                }
+
+                if (call.function.name === 'send_telegram_file') {
+                    const result = await sendTgFile(args.filename, args.content, args.caption || '');
+                    // Mistral требует content как строку в tool-сообщении
+                    aiHistory.push({
+                        role: 'tool',
+                        tool_call_id: call.id,
+                        content: result.ok ? 'Файл отправлен успешно.' : `Ошибка: ${result.reason}`
+                    });
+                    aiHideTyping();
+                    if (result.ok) {
+                        aiAppendMsg('assistant', `📎 Файл **${args.filename}** отправлен в Telegram${args.caption ? `\n${args.caption}` : ''}`);
+                    } else if (result.reason === 'no_id') {
+                        aiAppendMsg('assistant', '⚠️ Укажи **ID или @username** Telegram в поле справа сверху — и я сразу отправлю файл.');
+                    } else {
+                        aiAppendMsg('assistant', `⚠️ Не удалось отправить файл: ${result.reason}`);
+                    }
+
+                } else {
+                    const textToSend = args.text;
+                    const result = await forwardToTelegram(textToSend);
+                    aiHistory.push({
+                        role: 'tool',
+                        tool_call_id: call.id,
+                        content: result.ok ? 'Отправлено успешно.' : `Ошибка: ${result.reason}`
+                    });
+                    aiHideTyping();
+                    if (result.ok) {
+                        const chatId = document.getElementById('chatIdInput').value.trim();
+                        aiAppendMsg('assistant', `✅ Отправлено в Telegram (${chatId}):\n\n${textToSend}`);
+                    } else if (result.reason === 'no_id') {
+                        aiAppendMsg('assistant', '⚠️ Укажи **ID или @username** Telegram в поле справа сверху — и я сразу отправлю.');
+                    } else {
+                        aiAppendMsg('assistant', `⚠️ Не удалось отправить: ${result.reason}`);
+                    }
+                }
+                aiShowTyping();
+            }
             aiHideTyping();
-            aiAppendMsg('assistant', reply);
-            aiHistory.push({ role: 'assistant', content: reply });
+
         } catch(e) {
             aiHideTyping();
             aiAppendMsg('assistant', '⚠ ' + (e.message || 'Connection error'));
@@ -2144,6 +2288,42 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
     // ── end GLOBAL CHAT ──────────────────────────────────────────
 
     // ── end AI ASSISTANT ─────────────────────────────────────────
+</script>
+
+<!-- ── CARD OVERLAY ─────────────────────────────────────── -->
+<div id="cardOverlay" onclick="hideCard()" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.1);align-items:center;justify-content:center;">
+    <div style="position:fixed;inset:0;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);pointer-events:none;"></div>
+    <div onclick="event.stopPropagation()" style="position:relative;z-index:1;
+        width:600px;height:360px;
+        background:#fff;
+        border-radius:18px;
+        overflow:hidden;
+        box-shadow:0 24px 70px rgba(0,0,0,0.35);
+        text-align:center;
+        padding-top:67px;
+        box-sizing:border-box;
+        color:#1a1a1a;
+        font-family:Arial,Helvetica,sans-serif;">
+        <div style="font-family:'Times New Roman',Times,serif;font-weight:bold;font-size:37px;letter-spacing:0.7px;margin-bottom:60px;color:#000033;">I'm CEO, Bitch.</div>
+        <div style="font-size:24px;margin-bottom:16px;letter-spacing:0.4px;">elias9548</div>
+        <div style="font-size:15px;margin-bottom:5px;display:flex;justify-content:center;align-items:baseline;gap:7px;">
+            <span style="font-weight:900;font-size:17px;color:#000;">septima</span>
+            <span style="text-transform:uppercase;font-size:12px;letter-spacing:0.7px;color:#444;">CORPORATE OF hARMONY</span>
+        </div>
+        <div style="font-size:13px;color:#444;line-height:1.4;letter-spacing:0.4px;">2207 elisburgh, monte lis, ca 31145-1187</div>
+        <div style="font-size:13px;color:#444;line-height:1.4;letter-spacing:0.4px;">phone: write to telegram @elias9548</div>
+        <div style="position:absolute;bottom:0;left:0;width:100%;height:20px;background-color:#3b5998;"></div>
+    </div>
+</div>
+<script>
+function showCard() {
+    const o = document.getElementById('cardOverlay');
+    o.style.display = 'flex';
+}
+function hideCard() {
+    document.getElementById('cardOverlay').style.display = 'none';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') hideCard(); });
 </script>
 </body>
 </html>
