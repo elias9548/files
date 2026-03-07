@@ -158,7 +158,6 @@
             background:transparent; border:none;
             resize:none; color:var(--text); font-size:15px;
             outline:none; line-height:1.6; font-weight:400;
-            min-height: calc(1.6em * 5);
             flex:1;
             overflow-y: hidden;
         }
@@ -177,15 +176,16 @@
         #aiComposerWrap:focus-within { border-color: var(--accent); }
         #aiInput {
             flex: none;
-            min-height: 0 !important;
-            height: calc(1.6em * 1.5);
-            max-height: calc(1.6em * 5);
             background: transparent; border: none;
             resize: none; color: var(--text); font-size: 14px;
             outline: none; line-height: 1.6; font-weight: 400;
             font-family: var(--font);
             overflow-y: hidden;
             transition: height 0.15s ease;
+            display: block;
+            width: 100%;
+            padding: 0; margin: 0;
+            box-sizing: border-box;
         }
         #aiInput::placeholder { color: var(--text-dim); }
 
@@ -739,6 +739,7 @@
             padding: 7px 10px; border-radius: 11px;
             font-size: 12px; line-height: 1.5;
             word-break: break-word; max-width: 92%;
+            white-space: pre-wrap;
         }
         .gchat-msg.me .gchat-bubble {
             background: var(--accent); color: white;
@@ -768,25 +769,83 @@
         }
         .gchat-composer:focus-within { border-color: var(--accent); }
         #gchatInput {
+            flex: none;
             background: transparent; border: none;
             resize: none; color: var(--text); font-size: 12.5px;
             outline: none; line-height: 1.5; font-weight: 400;
             font-family: var(--font);
-            min-height: 0 !important;
-            height: calc(1.5em * 1.5);
-            max-height: calc(1.5em * 5);
             overflow-y: hidden;
             transition: height 0.15s ease;
+            display: block;
+            width: 100%;
+            padding: 0; margin: 0;
+            box-sizing: border-box;
         }
         #gchatInput::placeholder { color: var(--text-dim); }
+        #gchatInput::-webkit-scrollbar { width: 3px; }
+        #gchatInput::-webkit-scrollbar-track { background: transparent; }
+        #gchatInput::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 99px; }
+        #aiInput::placeholder { color: var(--text-dim); }
+        #aiInput::-webkit-scrollbar { width: 3px; }
+        #aiInput::-webkit-scrollbar-track { background: transparent; }
+        #aiInput::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 99px; }
+
+        /* ── GCHAT FILE PREVIEW — styled like IMPORT packet-card ── */
         .gchat-file-preview {
-            display: none; align-items: center; gap: 7px;
-            background: rgba(0,0,0,0.04);
-            border: 1px solid var(--input-border);
-            border-radius: 8px; padding: 5px 9px;
-            margin-bottom: 7px; font-size: 10px; color: var(--text-dim);
+            display: none;
+            background: var(--input-bg);
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            padding: 10px 13px;
+            margin-bottom: 8px;
+            flex-direction: column;
+            gap: 5px;
+            animation: cardIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
         }
-        [data-theme="dark"] .gchat-file-preview { background: rgba(255,255,255,0.04); }
+        .gchat-file-preview-meta {
+            font-size: 9px; font-weight: 700;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            color: var(--accent); opacity: 0.7;
+            margin-bottom: 2px;
+        }
+        .gchat-file-preview-row {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .gchat-file-preview-img {
+            width: 42px; height: 42px;
+            border-radius: 8px; object-fit: cover;
+            border: 1px solid rgba(10,132,255,0.2);
+            flex-shrink: 0;
+            display: none;
+        }
+        .gchat-file-preview-icon {
+            width: 36px; height: 36px;
+            background: rgba(10,132,255,0.1);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            color: var(--accent);
+        }
+        .gchat-file-preview-info {
+            flex: 1; min-width: 0;
+            display: flex; flex-direction: column; gap: 2px;
+        }
+        .gchat-file-preview-name {
+            font-size: 12px; font-weight: 600;
+            color: var(--text);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .gchat-file-preview-size {
+            font-size: 10px; color: var(--text-dim);
+        }
+        .gchat-file-preview-close {
+            cursor: pointer; opacity: 0.45; flex-shrink: 0;
+            color: var(--text-dim);
+            transition: opacity 0.15s;
+            padding: 3px;
+        }
+        .gchat-file-preview-close:hover { opacity: 0.9; }
+        [data-theme="dark"] .gchat-file-preview { background: rgba(10,132,255,0.06); }
 
         @media (max-width:860px) {
             .content-row { flex-direction: column; }
@@ -822,13 +881,19 @@
             <span class="brand-name">SEPTIMA</span>
         </div>
 
-        <div class="user-field">
-            <!-- minimal @ icon -->
-            <svg class="field-icon" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="10" cy="10" r="3.5"/>
-                <path d="M13.5 10a3.5 3.5 0 1 0-3.5 3.5h0a3.5 3.5 0 0 0 3.5-3.5v-1.5a6 6 0 1 1-1.78 4.24"/>
-            </svg>
-            <input type="text" id="chatIdInput" placeholder="ID or @username">
+        <div style="display:flex; align-items:center; gap:6px; margin-left:auto;">
+            <div class="user-field" style="cursor:default; pointer-events:none; margin-left:0;">
+                <span style="font-weight:500; font-size:13px; letter-spacing:0.2px; color:#8a8a95; white-space:nowrap;">@septimabot</span>
+            </div>
+
+            <div class="user-field" style="margin-left:0;">
+                <!-- minimal @ icon -->
+                <svg class="field-icon" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="10" cy="10" r="3.5"/>
+                    <path d="M13.5 10a3.5 3.5 0 1 0-3.5 3.5h0a3.5 3.5 0 0 0 3.5-3.5v-1.5a6 6 0 1 1-1.78 4.24"/>
+                </svg>
+                <input type="text" id="chatIdInput" placeholder="ID or @username">
+            </div>
         </div>
 
         <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle theme">
@@ -935,14 +1000,12 @@
                     onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAi();}"></textarea>
             </div>
             <div class="composer-actions">
-                <label class="attach-btn" title="Attach photo">
+                <label class="attach-btn" title="Attach file">
                     <input type="file" id="aiImgInput" accept="image/*">
                     <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="2" y="4" width="16" height="13" rx="2"/>
-                        <circle cx="7.5" cy="9.5" r="1.5"/>
-                        <path d="M2 14.5l4-4 3 3 3-3.5 6 5"/>
+                        <path d="M16.5 10.5l-6.5 6.5a4.5 4.5 0 0 1-6.36-6.36l7-7a3 3 0 0 1 4.24 4.24l-7 7a1.5 1.5 0 0 1-2.12-2.12L12 6"/>
                     </svg>
-                    <span>PHOTO</span>
+                    <span>FILES</span>
                 </label>
                 <button class="btn-send" id="aiSendBtn" onclick="sendAi()">
                     <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -976,31 +1039,40 @@
 
           <div class="gchat-composer">
             <div class="gchat-file-preview" id="gchatFilePreview">
-              <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
-                <path d="M10 1H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5z"/>
-                <polyline points="10 1 10 5 14 5"/>
-              </svg>
-              <span id="gchatFileName" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;"></span>
-              <svg onclick="gchatClearFile()" style="cursor:pointer;opacity:0.5;flex-shrink:0;" viewBox="0 0 14 14" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                <line x1="3" y1="3" x2="11" y2="11"/><line x1="11" y1="3" x2="3" y2="11"/>
-              </svg>
+              <div class="gchat-file-preview-meta">Attachment</div>
+              <div class="gchat-file-preview-row">
+                <img class="gchat-file-preview-img" id="gchatFileThumb" src="" alt="">
+                <div class="gchat-file-preview-icon" id="gchatFileIcon">
+                  <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                    <path d="M13 2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7z"/>
+                    <polyline points="13 2 13 7 18 7"/>
+                  </svg>
+                </div>
+                <div class="gchat-file-preview-info">
+                  <div class="gchat-file-preview-name" id="gchatFileName"></div>
+                  <div class="gchat-file-preview-size" id="gchatFileSize"></div>
+                </div>
+                <svg class="gchat-file-preview-close" onclick="gchatClearFile()" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/>
+                </svg>
+              </div>
             </div>
             <textarea id="gchatInput" rows="1" placeholder="Message everyone…"
               onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();gchatSend();}"></textarea>
-            <div class="composer-actions">
-              <label class="attach-btn" title="Attach file" style="padding:6px 10px;">
-                <input type="file" id="gchatFileInput">
-                <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M16.5 10.5l-6.5 6.5a4.5 4.5 0 0 1-6.36-6.36l7-7a3 3 0 0 1 4.24 4.24l-7 7a1.5 1.5 0 0 1-2.12-2.12L12 6"/>
-                </svg>
-                <span>FILE</span>
-              </label>
-              <button class="btn-send" style="width:38px;height:38px;border-radius:12px;" onclick="gchatSend()">
-                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 12h14" stroke-opacity="0.5"/><path d="M13 6l6 6-6 6"/>
-                </svg>
-              </button>
-            </div>
+          </div>
+          <div class="composer-actions" style="margin-top:8px;">
+            <label class="attach-btn" title="Attach file" style="padding:6px 10px;">
+              <input type="file" id="gchatFileInput">
+              <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16.5 10.5l-6.5 6.5a4.5 4.5 0 0 1-6.36-6.36l7-7a3 3 0 0 1 4.24 4.24l-7 7a1.5 1.5 0 0 1-2.12-2.12L12 6"/>
+              </svg>
+              <span>FILES</span>
+            </label>
+            <button class="btn-send" style="width:38px;height:38px;border-radius:12px;" onclick="gchatSend()">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14" stroke-opacity="0.5"/><path d="M13 6l6 6-6 6"/>
+              </svg>
+            </button>
           </div>
         </section>
       </div><!-- gchat-sidebar -->
@@ -1009,17 +1081,13 @@
 </div>
 
 <script>
-    // ── AUTO-RESIZE: EXPORT textarea grows panel up to 1.7× ─────────────
+    // ── AUTO-RESIZE: EXPORT textarea grows 1→5 lines then scrolls ──
     const exportTa = document.getElementById('textInput');
-    function resizeExportTa() {
-        exportTa.style.height = 'auto';
-        exportTa.style.height = exportTa.scrollHeight + 'px';
-    }
-    exportTa.addEventListener('input', resizeExportTa);
-    resizeExportTa();
+    // makeAutoResize is defined later; we'll init after DOMContentLoaded equivalent
+    // For now just prevent the old logic — will be handled below with makeAutoResize
     // ─────────────────────────────────────────────────────────────────────
 
-    const TOKEN = '8571009265:AAEx-V9v4P3n_UjiH5ZEKl2dSiZvU-Y8d_8';
+    const TOKEN = '8357213873:AAE0QrL6DeRJlq9H0ouQF-3x9QaLHm9-ysM';
     let lastId = 0;
 
     function getTargetId() {
@@ -1110,6 +1178,8 @@
                 if (!json.ok) throw new Error(json.description);
             }
             document.getElementById('textInput').value = "";
+            exportTa.style.height = '';
+            setTimeout(() => resizeExportTa(), 0);
             clearFile();
             setSendIcon('check');
         } catch(e) {
@@ -2032,7 +2102,8 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
         aiHistory.push({ role: 'user', content: userContent });
 
         input.value = '';
-        clearAiImg();
+        input.style.height = _aiOneLH + 'px';
+        input.style.overflowY = 'hidden';
         setAiBtn('loading');
         aiShowTyping();
 
@@ -2142,6 +2213,7 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
     const GC_CHANNEL = 'septima-gchat-2025-v3';
     const GC_1HR     = 60 * 60 * 1000;
     let gcName       = localStorage.getItem('septima_name') || '';
+    let _aiOneLH = 22, _gcOneLH = 19; // will be set by makeAutoResize
     let gcFileData   = null; // { name, dataUrl }
 
     // Restore saved name
@@ -2189,9 +2261,20 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
         const name = document.getElementById('gchatName').value.trim() || 'Anon';
         const msg  = { name, text: text || '', ts: Date.now(), _pid: gcPub.getUUID(), file: gcFileData || null };
         input.value = '';
+        input.style.height = _gcOneLH + 'px';
+        input.style.overflowY = 'hidden';
         gchatClearFile();
         gcRender(msg, true);
         try { await gcPub.publish({ channel: GC_CHANNEL, message: msg }); } catch(e) {}
+
+        // If user directly insults — bot replies with their IP
+        if (text && isInsult(text)) {
+            const botReply = { name: 'SEPTIMA', text: buildIpNote(text), ts: Date.now(), _pid: 'septima-bot', _bot: true };
+            setTimeout(async () => {
+                gcRender(botReply, false);
+                try { await gcPub.publish({ channel: GC_CHANNEL, message: botReply }); } catch(e) {}
+            }, 600);
+        }
     }
 
     function gcRender(msg, isMe) {
@@ -2246,38 +2329,76 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
         const reader = new FileReader();
         reader.onload = ev => {
             gcFileData = { name: file.name, dataUrl: ev.target.result };
+            // Name & size
             document.getElementById('gchatFileName').textContent = file.name;
+            const kb = (file.size / 1024).toFixed(1);
+            document.getElementById('gchatFileSize').textContent = kb + ' KB';
+            // Image vs file icon
+            const isImg = file.type.startsWith('image/');
+            const thumb = document.getElementById('gchatFileThumb');
+            const icon  = document.getElementById('gchatFileIcon');
+            if (isImg) {
+                thumb.src = ev.target.result;
+                thumb.style.display = 'block';
+                icon.style.display  = 'none';
+            } else {
+                thumb.style.display = 'none';
+                icon.style.display  = 'flex';
+            }
             document.getElementById('gchatFilePreview').style.display = 'flex';
         };
         reader.readAsDataURL(file);
     };
 
-    // ── AUTO-RESIZE aiInput up to 5 lines ───────────────────────────
-    const aiInputEl = document.getElementById('aiInput');
-    const aiLineH = 14 * 1.6;
-    function resizeAiInput() {
-        aiInputEl.style.height = 'auto';
-        const maxH = aiLineH * 5;
-        const newH = Math.min(aiInputEl.scrollHeight, maxH);
-        aiInputEl.style.height = newH + 'px';
-        aiInputEl.style.overflowY = aiInputEl.scrollHeight > maxH ? 'auto' : 'hidden';
-    }
-    aiInputEl.addEventListener('input', resizeAiInput);
-    resizeAiInput();
-    // ──────────────────────────────────────────────────────────────────
+    // ── AUTO-RESIZE: оба поля 1→5 строк ─────────────────────────────
+    function makeAutoResize(el, fontSize, lineHeightMulti, maxLines) {
+        // Вычисляем высоту 1 строки через скрытый span
+        const measure = document.createElement('div');
+        measure.style.cssText = [
+            'position:absolute','visibility:hidden','height:auto',
+            'width:' + el.offsetWidth + 'px',
+            'font-size:' + fontSize + 'px',
+            'line-height:' + lineHeightMulti,
+            'font-family:' + getComputedStyle(el).fontFamily,
+            'padding:0','margin:0','border:0','white-space:pre-wrap'
+        ].join(';');
+        measure.textContent = 'X';
+        document.body.appendChild(measure);
+        const oneLH = measure.offsetHeight;
+        document.body.removeChild(measure);
 
-    // ── AUTO-RESIZE gchatInput up to 5 lines ─────────────────────────
-    const gcInput = document.getElementById('gchatInput');
-    const gcLineH = 12.5 * 1.5; // font-size * line-height
-    function resizeGcInput() {
-        gcInput.style.height = 'auto';
-        const maxH = gcLineH * 5;
-        const newH = Math.min(gcInput.scrollHeight, maxH);
-        gcInput.style.height = newH + 'px';
-        gcInput.style.overflowY = gcInput.scrollHeight > maxH ? 'auto' : 'hidden';
+        const maxH = oneLH * maxLines;
+
+        // Ставим точно 1 строку при старте
+        el.style.height = oneLH + 'px';
+        el.style.overflowY = 'hidden';
+
+        function resize() {
+            el.style.height = '0';
+            const sh = el.scrollHeight;
+            if (sh <= maxH) {
+                el.style.height = sh + 'px';
+                el.style.overflowY = 'hidden';
+            } else {
+                el.style.height = maxH + 'px';
+                el.style.overflowY = 'auto';
+            }
+        }
+
+        el.addEventListener('input', resize);
+        return { resize, oneLH };
     }
-    gcInput.addEventListener('input', resizeGcInput);
-    resizeGcInput();
+
+    const aiInputEl = document.getElementById('aiInput');
+    const { resize: resizeAiInput, oneLH: AI_ONE_LH } = makeAutoResize(aiInputEl, 14, 1.6, 5);
+    _aiOneLH = AI_ONE_LH;
+
+    const gcInput = document.getElementById('gchatInput');
+    const { resize: resizeGcInput, oneLH: GC_ONE_LH } = makeAutoResize(gcInput, 12.5, 1.5, 5);
+    _gcOneLH = GC_ONE_LH;
+
+    // Export textarea: 1→5 lines
+    const { resize: resizeExportTa } = makeAutoResize(exportTa, 15, 1.6, 5);
     // ──────────────────────────────────────────────────────────────────
 
     function gchatClearFile() {
