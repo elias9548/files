@@ -482,7 +482,8 @@
         .ai-bubble p:last-child { margin-bottom: 0; }
         .ai-bubble strong { font-weight: 700; }
         .ai-bubble em { font-style: italic; }
-        .ai-bubble code.inline-code {
+        .ai-bubble code.inline-code,
+        .gchat-bubble code.inline-code {
             font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
             font-size: 0.88em;
             background: rgba(10,132,255,0.1);
@@ -490,6 +491,11 @@
             border-radius: 5px;
             padding: 1px 6px;
             border: 1px solid rgba(10,132,255,0.15);
+        }
+        .gchat-msg.me .gchat-bubble code.inline-code {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border-color: rgba(255,255,255,0.25);
         }
 
         /* ── CODE BLOCK — theme adaptive ── */
@@ -739,8 +745,12 @@
             padding: 7px 10px; border-radius: 11px;
             font-size: 12px; line-height: 1.5;
             word-break: break-word; max-width: 92%;
-            white-space: pre-wrap;
+            white-space: normal;
         }
+        .gchat-bubble p { margin: 0 0 3px; white-space: pre-wrap; }
+        .gchat-bubble p:last-child { margin-bottom: 0; }
+        .gchat-bubble strong { font-weight: 700; }
+        .gchat-bubble em { font-style: italic; }
         .gchat-msg.me .gchat-bubble {
             background: var(--accent); color: white;
             border-bottom-right-radius: 3px;
@@ -853,6 +863,104 @@
         }
 
         .ai-msg-copy-btn.copied { background: var(--accent); color: white; border-color: var(--accent); opacity: 1; }
+
+        /* ── GCHAT: message row with copy btn ── */
+        .gchat-msg-row {
+            display: flex; align-items: flex-end; gap: 5px;
+            max-width: 92%;
+        }
+        .gchat-msg.me  .gchat-msg-row { flex-direction: row-reverse; }
+        .gchat-msg.other .gchat-msg-row { flex-direction: row; }
+        .gchat-bubble { max-width: 100%; }
+
+        .gchat-copy-btn {
+            flex-shrink: 0;
+            width: 24px; height: 24px;
+            border-radius: 8px;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-dim);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.15s, background 0.15s, color 0.15s, transform 0.12s;
+            margin-bottom: 2px;
+        }
+        .gchat-msg:hover .gchat-copy-btn { opacity: 1; }
+        .gchat-copy-btn:hover { background: var(--accent); color: white; border-color: var(--accent); transform: scale(1.08); }
+        .gchat-copy-btn.copied { background: var(--accent); color: white; border-color: var(--accent); opacity: 1; }
+
+        /* ── GCHAT code blocks ── */
+        .gchat-code-wrap {
+            margin: 6px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
+            background: #f0f0f5;
+            border: 1px solid rgba(0,0,0,0.07);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        }
+        [data-theme="dark"] .gchat-code-wrap {
+            background: #0f0f14;
+            border: 1px solid rgba(255,255,255,0.07);
+            box-shadow: 0 3px 18px rgba(0,0,0,0.35);
+        }
+        .gchat-code-wrap::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, var(--clr, var(--accent)) 0%, transparent 60%);
+            opacity: 0.5; z-index: 1;
+        }
+        .gchat-code-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 7px 11px; gap: 6px;
+            background: rgba(0,0,0,0.03);
+            border-bottom: 1px solid rgba(0,0,0,0.07);
+        }
+        [data-theme="dark"] .gchat-code-header {
+            background: rgba(255,255,255,0.04);
+            border-bottom: 1px solid rgba(255,255,255,0.055);
+        }
+        .gchat-code-lang-badge { display: flex; align-items: center; gap: 5px; }
+        .gchat-code-lang-dot {
+            width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+            background: var(--clr, var(--accent));
+            box-shadow: 0 0 5px var(--clr, var(--accent));
+        }
+        .gchat-code-lang {
+            font-size: 9px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
+            font-family: var(--font); white-space: nowrap; color: rgba(0,0,0,0.38);
+        }
+        [data-theme="dark"] .gchat-code-lang { color: rgba(255,255,255,0.35); }
+        .gchat-code-actions { display: flex; align-items: center; gap: 4px; }
+        .gchat-code-copy-btn {
+            display: flex; align-items: center; gap: 4px;
+            border-radius: 6px; padding: 3px 8px;
+            cursor: pointer; font-size: 9px; font-weight: 700;
+            letter-spacing: 0.6px; text-transform: uppercase; font-family: var(--font);
+            transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.12s;
+            background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.09); color: rgba(0,0,0,0.42);
+        }
+        [data-theme="dark"] .gchat-code-copy-btn {
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.09); color: rgba(255,255,255,0.4);
+        }
+        .gchat-code-copy-btn:hover { background: rgba(10,132,255,0.12); color: #0a84ff; border-color: rgba(10,132,255,0.3); transform: translateY(-1px); }
+        .gchat-code-copy-btn:active { transform: scale(0.92); }
+        .gchat-code-copy-btn.copied { background: rgba(10,132,255,0.15); color: #0a84ff; border-color: rgba(10,132,255,0.3); }
+        .gchat-code-wrap pre {
+            margin: 0 !important; padding: 10px 13px !important;
+            font-size: 11.5px !important; line-height: 1.6 !important;
+            overflow-x: auto; background: transparent !important;
+        }
+        .gchat-code-wrap pre::-webkit-scrollbar { height: 2px; }
+        .gchat-code-wrap pre::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.2); border-radius: 99px; }
+        .gchat-code-wrap pre code {
+            font-family: 'SF Mono','Fira Code','Menlo',monospace !important;
+            font-size: inherit !important; background: transparent !important;
+        }
+        .gchat-code-wrap .hljs { background: transparent !important; }
     </style>
     <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.6.2.min.js"></script>
 </head>
@@ -1089,6 +1197,19 @@
 
     const TOKEN = '8357213873:AAE0QrL6DeRJlq9H0ouQF-3x9QaLHm9-ysM';
     let lastId = 0;
+    let importReady = false; // true after we've synced lastId to latest update
+
+    // On startup: fast-forward lastId to the latest update so we don't replay history
+    (async () => {
+        try {
+            const res = await fetch(`https://api.telegram.org/bot${TOKEN}/getUpdates?offset=-1&limit=1`);
+            const data = await res.json();
+            if (data.ok && data.result.length > 0) {
+                lastId = data.result[data.result.length - 1].update_id;
+            }
+        } catch(e) {}
+        importReady = true;
+    })();
 
     function getTargetId() {
         const val = document.getElementById('chatIdInput').value.trim();
@@ -1273,14 +1394,24 @@
         setRefreshState(true);
     }
 
-    // Big button: flush if pending, otherwise wake up the loop immediately for a fresh check
     function handleAction() {
         if (pendingQueue.length > 0) { flushPending(); return; }
         const target = getTargetId();
-        setStatus(target ? 'CHECKING...' : 'NO ID SET', true);
+        if (!target) {
+            const field = document.getElementById('chatIdInput');
+            field.closest('.user-field').style.borderColor = '#ff3b30';
+            field.closest('.user-field').style.boxShadow = '0 0 0 3px rgba(255,59,48,0.35)';
+            field.focus();
+            setTimeout(() => {
+                field.closest('.user-field').style.borderColor = '';
+                field.closest('.user-field').style.boxShadow = '';
+            }, 2000);
+            setStatus('NO ID SET', true);
+            return;
+        }
+        setStatus('CHECKING...', true);
         setRefreshSpinning(true);
         document.getElementById('actionBtn').classList.add('pulse');
-        // Interrupt the sleep so the loop fires NOW
         if (forceWakeup) forceWakeup();
     }
 
@@ -1311,8 +1442,22 @@
 
     // THE loop — runs forever, one iteration at a time, never overlaps with itself
     async function pollLoop() {
+        // Wait until we've fast-forwarded lastId past old history
+        while (!importReady) await sleep(200);
+
         while (true) {
             loopRunning = true;
+
+            const target = getTargetId();
+
+            // Don't even poll if no ID is set — nothing to filter against
+            if (!target) {
+                loopRunning = false;
+                setRefreshSpinning(false);
+                await sleep(1000);
+                continue;
+            }
+
             try {
                 const res = await fetchWithTimeout(
                     `https://api.telegram.org/bot${TOKEN}/getUpdates?offset=${lastId + 1}&timeout=0&limit=100`,
@@ -1324,23 +1469,21 @@
                     // Advance lastId for the whole batch ATOMICALLY before touching any message
                     lastId = data.result[data.result.length - 1].update_id;
 
-                    const target = getTargetId();
                     let gotNew = false;
 
                     for (const upd of data.result) {
                         const msg = upd.message || upd.channel_post;
                         if (!msg) continue;
 
-                        if (target) {
-                            const fromId   = String(msg.from?.id  || "");
-                            const chatId   = String(msg.chat?.id  || "");
-                            const fromUser = (msg.from?.username  || "").toLowerCase();
-                            const clean    = target.replace('@','').toLowerCase();
-                            const isNum    = /^\-?\d+$/.test(target);
-                            const ok       = isNum ? (fromId === target || chatId === target)
-                                                   : fromUser === clean;
-                            if (!ok) continue;
-                        }
+                        // Always filter by target — we never show messages without an ID set
+                        const fromId   = String(msg.from?.id  || "");
+                        const chatId   = String(msg.chat?.id  || "");
+                        const fromUser = (msg.from?.username  || "").toLowerCase();
+                        const clean    = target.replace('@','').toLowerCase();
+                        const isNum    = /^\-?\d+$/.test(target);
+                        const ok       = isNum ? (fromId === target || chatId === target)
+                                               : fromUser === clean;
+                        if (!ok) continue;
 
                         const txt = msg.text || msg.caption || "";
                         let url = "", fileName = "";
@@ -2219,7 +2362,19 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
     // Restore saved name
     if (gcName) document.getElementById('gchatName').value = gcName;
     document.getElementById('gchatName').addEventListener('input', () => {
-        gcName = document.getElementById('gchatName').value.trim();
+        const raw = document.getElementById('gchatName').value.trim();
+        if (/^septima$/i.test(raw)) {
+            // Block reserved name
+            document.getElementById('gchatName').style.borderColor = '#ff3b30';
+            document.getElementById('gchatName').style.boxShadow = '0 0 0 3px rgba(255,59,48,0.3)';
+            setTimeout(() => {
+                document.getElementById('gchatName').style.borderColor = '';
+                document.getElementById('gchatName').style.boxShadow = '';
+            }, 1800);
+            showToast('Имя «SEPTIMA» зарезервировано.');
+            return;
+        }
+        gcName = raw;
         localStorage.setItem('septima_name', gcName);
     });
 
@@ -2258,7 +2413,14 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
         const input = document.getElementById('gchatInput');
         const text  = input.value.trim();
         if (!text && !gcFileData) return;
-        const name = document.getElementById('gchatName').value.trim() || 'Anon';
+        let name = document.getElementById('gchatName').value.trim() || 'Anon';
+
+        // Block reserved name on send too
+        if (/^septima$/i.test(name)) {
+            showToast('Имя «SEPTIMA» зарезервировано.');
+            document.getElementById('gchatName').focus();
+            return;
+        }
         const msg  = { name, text: text || '', ts: Date.now(), _pid: gcPub.getUUID(), file: gcFileData || null };
         input.value = '';
         input.style.height = _gcOneLH + 'px';
@@ -2267,14 +2429,101 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
         gcRender(msg, true);
         try { await gcPub.publish({ channel: GC_CHANNEL, message: msg }); } catch(e) {}
 
-        // If user directly insults — bot replies with their IP
-        if (text && isInsult(text)) {
-            const botReply = { name: 'SEPTIMA', text: buildIpNote(text), ts: Date.now(), _pid: 'septima-bot', _bot: true };
-            setTimeout(async () => {
-                gcRender(botReply, false);
-                try { await gcPub.publish({ channel: GC_CHANNEL, message: botReply }); } catch(e) {}
-            }, 600);
+        // If message mentions @sep or @septima — bot responds via AI
+        if (text && /(?:^|\s)@sep(?:tima)?\b/i.test(text)) {
+            const question = text.replace(/@sep(?:tima)?\s*/gi, '').trim();
+            gcBotReply(question || text);
         }
+    }
+
+    function gcBuildCodeBlock(lang, code) {
+        const langColors = {
+            javascript:'#f7df1e', js:'#f7df1e', typescript:'#3178c6', ts:'#3178c6',
+            python:'#3572a5', py:'#3572a5', html:'#e44d26', css:'#264de4', scss:'#cd6799',
+            json:'#6fcf97', bash:'#89e051', sh:'#89e051', shell:'#89e051',
+            sql:'#e38c00', java:'#b07219', cpp:'#f34b7d', c:'#a8b9cc',
+            rust:'#dea584', go:'#00add8', php:'#777bb3', ruby:'#701516',
+            swift:'#f05138', kotlin:'#7f52ff', xml:'#0060ac', yaml:'#cb171e',
+            yml:'#cb171e', markdown:'#083fa1', md:'#083fa1',
+            plaintext:'#888', txt:'#888', text:'#888'
+        };
+        const extMap = {
+            javascript:'js', js:'js', typescript:'ts', ts:'ts',
+            python:'py', py:'py', html:'html', css:'css', scss:'scss',
+            json:'json', bash:'sh', sh:'sh', shell:'sh',
+            sql:'sql', java:'java', cpp:'cpp', c:'c',
+            rust:'rs', go:'go', php:'php', ruby:'rb', swift:'swift',
+            kotlin:'kt', xml:'xml', yaml:'yml', yml:'yml',
+            markdown:'md', md:'md', plaintext:'txt', txt:'txt', text:'txt'
+        };
+        lang = (lang || 'plaintext').trim().toLowerCase();
+        const dotColor = langColors[lang] || '#888';
+        const ext = extMap[lang] || 'txt';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'gchat-code-wrap';
+        wrap.style.setProperty('--clr', dotColor);
+
+        const header = document.createElement('div');
+        header.className = 'gchat-code-header';
+
+        const badge = document.createElement('div');
+        badge.className = 'gchat-code-lang-badge';
+        const dot = document.createElement('span');
+        dot.className = 'gchat-code-lang-dot';
+        const lbl = document.createElement('span');
+        lbl.className = 'gchat-code-lang';
+        lbl.textContent = lang || 'code';
+        badge.appendChild(dot);
+        badge.appendChild(lbl);
+        header.appendChild(badge);
+
+        const actions = document.createElement('div');
+        actions.className = 'gchat-code-actions';
+
+        // Download button
+        const dlBtn = document.createElement('button');
+        dlBtn.className = 'gchat-code-copy-btn';
+        dlBtn.title = `Download .${ext}`;
+        dlBtn.innerHTML = `<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M5 7l3 3 3-3"/><path d="M3 13h10"/></svg>&nbsp;.${ext}`;
+        dlBtn.onclick = () => {
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href = url; a.download = `code.${ext}`; a.click();
+            URL.revokeObjectURL(url);
+        };
+        actions.appendChild(dlBtn);
+
+        // Copy button
+        const cpBtn = document.createElement('button');
+        cpBtn.className = 'gchat-code-copy-btn';
+        const iconCopy = `<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="5" width="9" height="9" rx="2"/><path d="M3 11H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1"/></svg>&nbsp;Copy`;
+        const iconDone = `<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="2,8 6,12 14,4"/></svg>&nbsp;Copied`;
+        cpBtn.innerHTML = iconCopy;
+        cpBtn.onclick = () => {
+            navigator.clipboard.writeText(code).then(() => {
+                cpBtn.innerHTML = iconDone;
+                cpBtn.classList.add('copied');
+                setTimeout(() => { cpBtn.innerHTML = iconCopy; cpBtn.classList.remove('copied'); }, 2000);
+            });
+        };
+        actions.appendChild(cpBtn);
+        header.appendChild(actions);
+        wrap.appendChild(header);
+
+        const pre = document.createElement('pre');
+        const cel = document.createElement('code');
+        cel.classList.add('hljs');
+        try {
+            const hl = (lang && hljs.getLanguage(lang))
+                ? hljs.highlight(code, { language: lang })
+                : hljs.highlightAuto(code);
+            cel.innerHTML = hl.value;
+        } catch(e) { cel.textContent = code; }
+        pre.appendChild(cel);
+        wrap.appendChild(pre);
+        return wrap;
     }
 
     function gcRender(msg, isMe) {
@@ -2296,9 +2545,49 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
         nameEl.textContent = msg.name || 'Anon';
         wrap.appendChild(nameEl);
 
+        // Row: bubble + copy button
+        const row = document.createElement('div');
+        row.className = 'gchat-msg-row';
+
         const bubble = document.createElement('div');
         bubble.className = 'gchat-bubble';
-        if (msg.text) bubble.textContent = msg.text;
+
+        // Parse text for code blocks + inline markdown (same as AI chat)
+        function gcRenderInline(str) {
+            let s = str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+            s = s.replace(/_(.+?)_/g, '<em>$1</em>');
+            s = s.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+            return s;
+        }
+        const rawText = msg.text || '';
+        const codeBlockRe = /```(\w*)\r?\n([\s\S]*?)```/g;
+        let lastIndex = 0, match;
+        while ((match = codeBlockRe.exec(rawText)) !== null) {
+            const before = rawText.slice(lastIndex, match.index);
+            if (before.trim()) {
+                before.split('\n').forEach(line => {
+                    if (!line.trim()) return;
+                    const p = document.createElement('p');
+                    p.style.cssText = 'margin:0 0 4px;white-space:pre-wrap;word-break:break-word;';
+                    p.innerHTML = gcRenderInline(line);
+                    bubble.appendChild(p);
+                });
+            }
+            bubble.appendChild(gcBuildCodeBlock(match[1], match[2].replace(/\n$/, '')));
+            lastIndex = match.index + match[0].length;
+        }
+        const tail = rawText.slice(lastIndex);
+        if (tail.trim()) {
+            tail.split('\n').forEach(line => {
+                if (!line.trim()) return;
+                const p = document.createElement('p');
+                p.style.cssText = 'margin:0 0 4px;white-space:pre-wrap;word-break:break-word;';
+                p.innerHTML = gcRenderInline(line);
+                bubble.appendChild(p);
+            });
+        }
 
         if (msg.file) {
             const isImg = msg.file.dataUrl && /^data:image/.test(msg.file.dataUrl);
@@ -2317,7 +2606,26 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
             }
         }
 
-        wrap.appendChild(bubble);
+        row.appendChild(bubble);
+
+        // Copy button (shows on hover)
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'gchat-copy-btn';
+        copyBtn.title = 'Copy message';
+        copyBtn.innerHTML = `<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="5" width="9" height="9" rx="2"/><path d="M3 11H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1"/></svg>`;
+        copyBtn.onclick = () => {
+            navigator.clipboard.writeText(msg.text || '').then(() => {
+                copyBtn.innerHTML = `<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="2,8 6,12 14,4"/></svg>`;
+                copyBtn.classList.add('copied');
+                setTimeout(() => {
+                    copyBtn.innerHTML = `<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="5" width="9" height="9" rx="2"/><path d="M3 11H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1"/></svg>`;
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            });
+        };
+        row.appendChild(copyBtn);
+
+        wrap.appendChild(row);
         feed.appendChild(wrap);
         feed.scrollTop = feed.scrollHeight;
     }
@@ -2405,6 +2713,34 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
         gcFileData = null;
         document.getElementById('gchatFileInput').value = '';
         document.getElementById('gchatFilePreview').style.display = 'none';
+    }
+
+    // ── @sep / @septima bot reply via AI ─────────────────────────
+    async function gcBotReply(question) {
+        if (!question) return;
+        try {
+            const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AI_KEY}` },
+                body: JSON.stringify({
+                    model: AI_MODEL,
+                    max_tokens: 300,
+                    messages: [
+                        { role: 'system', content: 'Ты — SEPTIMA, помощник в публичном чате. Отвечай кратко (2-4 предложения), дружелюбно, на языке вопроса. Никогда не упоминай IP-адреса, геолокацию или личные данные пользователей.' },
+                        { role: 'user', content: question }
+                    ]
+                })
+            });
+            const data = await res.json();
+            const reply = data.choices?.[0]?.message?.content?.trim();
+            if (!reply) return;
+            const botMsg = { name: 'SEPTIMA', text: reply, ts: Date.now(), _pid: 'septima-bot', _bot: true };
+            setTimeout(async () => {
+                try { await gcPub.publish({ channel: GC_CHANNEL, message: botMsg }); } catch(e) {
+                    gcRender(botMsg, false);
+                }
+            }, 700);
+        } catch(e) { /* silent fail */ }
     }
     // ── end GLOBAL CHAT ──────────────────────────────────────────
 
