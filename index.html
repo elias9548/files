@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link id="hljs-theme" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.9.5.0.min.js"></script>
+    
     <style>
         :root {
             --bg: #ffffff;
@@ -775,6 +775,13 @@
             font-size: 8px; font-weight: 700;
             letter-spacing: 1px; text-transform: uppercase;
             color: var(--text-dim); opacity: 0.55; padding: 0 3px;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .gchat-msg-time {
+            font-size: 8px; font-weight: 500;
+            letter-spacing: 0.3px; text-transform: none;
+            color: var(--text-dim); opacity: 0.7;
+            flex-shrink: 0;
         }
         .gchat-bubble {
             padding: 7px 10px; border-radius: 11px;
@@ -980,11 +987,12 @@
         }
         .gchat-code-wrap .hljs { background: transparent !important; }
     </style>
-    <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.6.2.min.js"></script>
+    <!-- PubNub removed — using Firebase Realtime Database for global chat -->
     <!-- Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore, collection, addDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getDatabase, ref, push, onChildAdded, remove, get, query as rtdbQuery, orderByChild, startAt, endBefore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyACgNtcW49YjVoSZ_CfbvNFs0t-Y_SMsYU",
@@ -992,7 +1000,8 @@
             projectId: "septima-f756f",
             storageBucket: "septima-f756f.firebasestorage.app",
             messagingSenderId: "748499317524",
-            appId: "1:748499317524:web:b098ace3f814b53d1dc801"
+            appId: "1:748499317524:web:b098ace3f814b53d1dc801",
+            databaseURL: "https://septima-f756f-default-rtdb.europe-west1.firebasedatabase.app"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -1028,6 +1037,56 @@
         };
 
         window._firebaseReady = true;
+
+        // ── GLOBAL CHAT via Firebase Realtime Database ──────────────────
+        const rtdb = getDatabase(app);
+        const chatRef = ref(rtdb, 'globalChat');
+        const GC_TTL = 24 * 60 * 60 * 1000; // 24 hours in ms
+
+        // Delete messages older than 24h
+        async function gcCleanOld() {
+            try {
+                const cutoff = Date.now() - GC_TTL;
+                const oldQ = rtdbQuery(chatRef, orderByChild('ts'), endBefore(cutoff));
+                const snap = await get(oldQ);
+                if (snap.exists()) {
+                    const dels = [];
+                    snap.forEach(child => dels.push(remove(child.ref)));
+                    await Promise.all(dels);
+                }
+            } catch(e) { /* silent */ }
+        }
+
+        // Send a message to RTDB
+        window._gcSendMessage = async (msg) => {
+            await push(chatRef, msg);
+            // Opportunistically clean old messages on each send
+            gcCleanOld();
+        };
+
+        // Subscribe to new messages (only those newer than 24h ago)
+        window._gcSubscribe = (onMsg) => {
+            const cutoff = Date.now() - GC_TTL;
+            const recentQ = rtdbQuery(chatRef, orderByChild('ts'), startAt(cutoff));
+            onChildAdded(recentQ, (snap) => {
+                const msg = snap.val();
+                if (msg) onMsg(msg, snap.key);
+            });
+        };
+
+        // Load last 24h of history
+        window._gcLoadHistory = async () => {
+            const cutoff = Date.now() - GC_TTL;
+            const recentQ = rtdbQuery(chatRef, orderByChild('ts'), startAt(cutoff));
+            const snap = await get(recentQ);
+            const msgs = [];
+            if (snap.exists()) {
+                snap.forEach(child => msgs.push({ key: child.key, ...child.val() }));
+            }
+            return msgs;
+        };
+
+        window._gcReady = true;
     </script>
 
     <!-- Cloudinary upload helper -->
@@ -2730,19 +2789,18 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
 
         setAiBtn('idle');
     }
-    // ── GLOBAL CHAT (PubNub demo keys — real-time, no config needed) ──
-    const GC_CHANNEL = 'septima-gchat-2025-v3';
-    const GC_1HR     = 60 * 60 * 1000;
+    // ── GLOBAL CHAT (Firebase Realtime Database — 24h persistence) ──
+    const _gcUserId  = 'sep-' + Math.random().toString(36).slice(2,10);
     let gcName       = localStorage.getItem('septima_name') || '';
     let _aiOneLH = 22, _gcOneLH = 19; // will be set by makeAutoResize
     let gcFileData   = null; // { name, dataUrl }
+    let _gcSeenKeys  = new Set(); // track rendered message keys to avoid duplicates
 
     // Restore saved name
     if (gcName) document.getElementById('gchatName').value = gcName;
     document.getElementById('gchatName').addEventListener('input', () => {
         const raw = document.getElementById('gchatName').value.trim();
         if (/^septima$/i.test(raw)) {
-            // Block reserved name
             document.getElementById('gchatName').style.borderColor = '#ff3b30';
             document.getElementById('gchatName').style.boxShadow = '0 0 0 3px rgba(255,59,48,0.3)';
             setTimeout(() => {
@@ -2756,36 +2814,33 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
         localStorage.setItem('septima_name', gcName);
     });
 
-    // Init PubNub
-    const gcPub = new PubNub({
-        publishKey:   'demo',
-        subscribeKey: 'demo',
-        userId:       'sep-' + Math.random().toString(36).slice(2,10)
-    });
-
-    // Load last hour of history on start
+    // Load 24h history, then subscribe to new messages
     (async () => {
-        try {
-            const now1hrAgo = (Date.now() - GC_1HR) * 10000;
-            const res = await gcPub.fetchMessages({
-                channels: [GC_CHANNEL],
-                count: 100,
-                start: String(now1hrAgo)
-            });
-            const msgs = res.channels[GC_CHANNEL] || [];
-            msgs.forEach(m => gcRender(m.message, false));
-        } catch(e) { /* history unavailable */ }
-    })();
-
-    // Subscribe for live messages
-    gcPub.addListener({
-        message: ({ message, publisher }) => {
-            // ignore own publish echoes (we render on send)
-            if (message._pid === gcPub.getUUID()) return;
-            gcRender(message, false);
+        // Wait for Firebase RTDB to be ready
+        let waited = 0;
+        while (!window._gcReady && waited < 5000) {
+            await new Promise(r => setTimeout(r, 100));
+            waited += 100;
         }
-    });
-    gcPub.subscribe({ channels: [GC_CHANNEL] });
+        if (!window._gcReady) return;
+
+        try {
+            // Load history
+            const history = await window._gcLoadHistory();
+            history.forEach(m => {
+                _gcSeenKeys.add(m.key);
+                gcRender(m, false);
+            });
+        } catch(e) { /* history unavailable */ }
+
+        // Subscribe to new real-time messages
+        window._gcSubscribe((msg, key) => {
+            if (_gcSeenKeys.has(key)) return; // skip already-rendered
+            _gcSeenKeys.add(key);
+            const isOwn = msg._pid === _gcUserId;
+            if (!isOwn) gcRender(msg, false);
+        });
+    })();
 
     async function gchatSend() {
         const input = document.getElementById('gchatInput');
@@ -2799,13 +2854,13 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
             document.getElementById('gchatName').focus();
             return;
         }
-        const msg  = { name, text: text || '', ts: Date.now(), _pid: gcPub.getUUID(), file: gcFileData || null };
+        const msg  = { name, text: text || '', ts: Date.now(), _pid: _gcUserId, file: gcFileData || null };
         input.value = '';
         input.style.height = _gcOneLH + 'px';
         input.style.overflowY = 'hidden';
         gchatClearFile();
         gcRender(msg, true);
-        try { await gcPub.publish({ channel: GC_CHANNEL, message: msg }); } catch(e) {}
+        try { await window._gcSendMessage(msg); } catch(e) {}
 
         // If message mentions @sep or @septima — bot responds via AI
         if (text && /(?:^|\s)@sep(?:tima)?\b/i.test(text)) {
@@ -2905,22 +2960,29 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
     }
 
     function gcRender(msg, isMe) {
-        // filter older than 1h
-        if (msg.ts && Date.now() - msg.ts > GC_1HR) return;
+        // filter older than 24h
+        if (msg.ts && Date.now() - msg.ts > 24 * 60 * 60 * 1000) return;
 
         const feed  = document.getElementById('gchatFeed');
         const empty = document.getElementById('gchatEmpty');
         if (empty) empty.remove();
 
         const myName = document.getElementById('gchatName').value.trim();
-        const me = isMe || (myName && msg.name === myName && msg._pid === gcPub.getUUID());
+        const me = isMe || (myName && msg.name === myName && msg._pid === _gcUserId);
 
         const wrap = document.createElement('div');
         wrap.className = `gchat-msg ${me ? 'me' : 'other'}`;
 
         const nameEl = document.createElement('div');
         nameEl.className = 'gchat-msg-name';
-        nameEl.textContent = msg.name || 'Anon';
+        const nameText = document.createElement('span');
+        nameText.textContent = msg.name || 'Anon';
+        nameEl.appendChild(nameText);
+        const timeEl = document.createElement('span');
+        timeEl.className = 'gchat-msg-time';
+        const d = msg.ts ? new Date(msg.ts) : new Date();
+        timeEl.textContent = d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+        nameEl.appendChild(timeEl);
         wrap.appendChild(nameEl);
 
         // Row: bubble + copy button
@@ -3099,9 +3161,10 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
             if (!reply) return;
             const botMsg = { name: 'SEPTIMA', text: reply, ts: Date.now(), _pid: 'septima-bot', _bot: true };
             setTimeout(async () => {
-                try { await gcPub.publish({ channel: GC_CHANNEL, message: botMsg }); } catch(e) {
+                try {
                     gcRender(botMsg, false);
-                }
+                    if (window._gcReady) await window._gcSendMessage(botMsg);
+                } catch(e) { gcRender(botMsg, false); }
             }, 700);
         } catch(e) { /* silent fail */ }
     }
