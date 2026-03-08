@@ -314,7 +314,7 @@
         }
         .packet-card.has-file {
             border-color: var(--accent);
-            border-opacity: 0.4;
+            box-shadow: 0 0 0 1px var(--accent);
         }
         .packet-card .file-link {
             display: inline-flex;
@@ -366,6 +366,12 @@
         }
         .btn-refresh:hover { transform: scale(1.1); }
         .btn-refresh:active { transform: scale(0.92); }
+        .btn-refresh {
+            background: var(--accent) !important;
+            border-color: var(--accent) !important;
+            color: white !important;
+            box-shadow: 0 4px 14px var(--accent-glow) !important;
+        }
         .btn-refresh.has-new {
             background: var(--accent);
             border-color: var(--accent);
@@ -1169,7 +1175,7 @@
                 </button>
                 <p id="msgDisplay">SCANNING</p>
             </div>
-            <button class="btn-refresh" id="refreshBtn" onclick="flushPending()" title="New packets">
+            <button class="btn-refresh" id="refreshBtn" onclick="handleAction()" title="Refresh">
                 <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M16.5 9A6.5 6.5 0 1 0 15 13.5"/>
                     <polyline points="16.5 4 16.5 9 12 9"/>
@@ -1571,7 +1577,7 @@
                 feed.querySelectorAll('.fb-packet').forEach(el => el.remove());
                 msgs.forEach(msg => {
                     const card = document.createElement('div');
-                    card.className = 'packet-card fb-packet';
+                    card.className = 'packet-card fb-packet' + (msg.fileUrl ? ' has-file' : '');
                     const meta = document.createElement('div');
                     meta.className = 'packet-meta';
                     const date = msg.ts ? new Date(msg.ts.seconds * 1000).toLocaleString() : '—';
