@@ -1049,7 +1049,7 @@
                 xhr.onload = () => {
                     try {
                         const data = JSON.parse(xhr.responseText);
-                        if (data.secure_url) resolve({ url: data.secure_url, name: data.original_filename + '.' + data.format, type: data.resource_type });
+                        if (data.secure_url) const _fmt = data.format || ''; const _orig = data.original_filename || 'file'; resolve({ url: data.secure_url, name: _fmt ? (_orig + '.' + _fmt) : _orig, type: data.resource_type });
                         else reject(new Error(data.error?.message || 'Upload failed'));
                     } catch(e) { reject(e); }
                 };
@@ -1987,14 +1987,18 @@ ${buildInfoBlock()}
 
 
 Telegram ID получателя: ${document.getElementById('chatIdInput')?.value?.trim() || '(не указан)'}
-У тебя есть два инструмента:
-• send_telegram — отправить текстовое сообщение
-• send_telegram_file — отправить файл (py, html, txt, js, css, json и др.)
-ВАЖНО: НИКОГДА не спрашивай про Telegram ID — просто вызывай инструмент.
-Используй инструменты ВСЕГДА когда пользователь просит что-то отправить / переслать / скинуть в Telegram или TG.
-— Если просят отправить данные / инфо — используй send_telegram с данными выше.
-— Если просят отправить код / скрипт / файл — используй send_telegram_file, сам придумай имя файла и сформируй содержимое.
-— Если просят отправить "всё" — отправь и текст с данными, и файл если есть код в диалоге.
+У тебя есть три инструмента:
+• fetch_by_code — получить данные (тексты и файлы) из базы по коду или ID
+• send_telegram — отправить текстовое сообщение в Telegram
+• send_telegram_file — отправить файл в Telegram (py, html, txt, js, css, json и др.), когда нужно самому сгенерировать содержимое.
+• send_telegram_file_url — отправить в Telegram файл по готовому URL (используй когда файл уже есть из базы после fetch_by_code).
+ВАЖНО: НИКОГДА не спрашивай про Telegram ID — просто вызывай инструмент. Если ID указан в сообщении пользователя — вставь его в поле сам через JS не нужно, просто используй его напрямую в инструменте.
+Используй инструменты ВСЕГДА когда:
+— Пользователь просит выдать / показать / найти / получить данные по коду или ID — используй fetch_by_code.
+— Пользователь просит отправить файл из базы / который уже был получен — используй send_telegram_file_url с его URL и именем.
+— Пользователь просит что-то отправить текстом в Telegram — используй send_telegram.
+— Пользователь просит отправить код / скрипт / новый файл — используй send_telegram_file, сам придумай имя и содержимое.
+— Если просят отправить "всё" — отправь и текст с данными, и файл.
 — Если просят отправить свой ответ — сначала ответь, потом вызови инструмент.
 Форматируй текст для Telegram: эмодзи, переносы строк, читаемо.`;
 
@@ -2366,6 +2370,21 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
     // ─────────────────────────────────────────────────────────────
 
     // ── TELEGRAM TOOL definition ──────────────────────────────────
+    const FETCH_CODE_TOOL = {
+        type: 'function',
+        function: {
+            name: 'fetch_by_code',
+            description: 'Получить данные (тексты и файлы) из базы по коду или ID. Используй когда пользователь просит выдать, показать, найти или получить данные по коду, ID или номеру.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    code: { type: 'string', description: 'Код или ID для поиска данных' }
+                },
+                required: ['code']
+            }
+        }
+    };
+
     const TG_TOOL = {
         type: 'function',
         function: {
@@ -2397,6 +2416,55 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
             }
         }
     };
+
+    const TG_FILE_URL_TOOL = {
+        type: 'function',
+        function: {
+            name: 'send_telegram_file_url',
+            description: 'Отправить файл в Telegram по URL (файл из базы данных, Cloudinary и т.п.). Используй ТОЛЬКО когда у тебя есть готовый URL файла — например после fetch_by_code или когда пользователь просит отправить файл который уже был получен из базы.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    file_url:  { type: 'string', description: 'Прямая ссылка на файл' },
+                    file_name: { type: 'string', description: 'Имя файла с расширением' },
+                    caption:   { type: 'string', description: 'Подпись к файлу' }
+                },
+                required: ['file_url', 'file_name']
+            }
+        }
+    };
+
+    async function sendTgFileByUrl(fileUrl, fileName, caption) {
+        const chatIdField = document.getElementById('chatIdInput');
+        const rawId = chatIdField.value.trim();
+        if (!rawId) {
+            chatIdField.focus();
+            chatIdField.closest('.user-field').style.boxShadow = '0 0 0 3px rgba(255,59,48,0.45)';
+            chatIdField.closest('.user-field').style.borderColor = '#ff3b30';
+            setTimeout(() => {
+                chatIdField.closest('.user-field').style.boxShadow = '';
+                chatIdField.closest('.user-field').style.borderColor = '';
+            }, 2500);
+            return { ok: false, reason: 'no_id' };
+        }
+        const chatId = normalizeChatId(getTargetId());
+        try {
+            // Download file from URL, then send as document
+            const resp = await fetch(fileUrl);
+            if (!resp.ok) throw new Error('Не удалось загрузить файл по ссылке');
+            const blob = await resp.blob();
+            const fd = new FormData();
+            fd.append('chat_id', chatId);
+            fd.append('document', blob, fileName);
+            if (caption) fd.append('caption', caption);
+            const res = await fetch(`https://api.telegram.org/bot${TOKEN}/sendDocument`, { method: 'POST', body: fd });
+            const data = await res.json();
+            if (!data.ok) return { ok: false, reason: data.description || 'Telegram error' };
+            return { ok: true };
+        } catch(e) {
+            return { ok: false, reason: e.message };
+        }
+    }
 
     async function sendTgFile(filename, content, caption) {
         const chatIdField = document.getElementById('chatIdInput');
@@ -2475,7 +2543,7 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
                     messages: aiHistory,
                     max_tokens: 3000,
                     temperature: 0.3,
-                    tools: [TG_TOOL, TG_FILE_TOOL],
+                    tools: [TG_TOOL, TG_FILE_TOOL, TG_FILE_URL_TOOL, FETCH_CODE_TOOL],
                     tool_choice: 'auto'
                 })
             });
@@ -2522,7 +2590,84 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
                     continue;
                 }
 
-                if (call.function.name === 'send_telegram_file') {
+                if (call.function.name === 'fetch_by_code') {
+                    const code = args.code;
+                    aiHideTyping();
+                    try {
+                        let waited = 0;
+                        while (!window._firebaseReady && waited < 3000) {
+                            await new Promise(r => setTimeout(r, 100));
+                            waited += 100;
+                        }
+                        if (!window._fbGetMessages) throw new Error('Firebase not ready');
+                        const msgs = await window._fbGetMessages(code);
+                        if (!msgs.length) {
+                            aiHistory.push({ role: 'tool', tool_call_id: call.id, content: `По коду "${code}" ничего не найдено.` });
+                            aiAppendMsg('assistant', `🔍 По коду **${code}** ничего не найдено.`);
+                        } else {
+                            // Build tool result text for history
+                            const summary = msgs.map((m, i) => {
+                                let parts = [`[${i+1}]`];
+                                if (m.text) parts.push(`Текст: ${m.text}`);
+                                if (m.fileUrl) parts.push(`Файл: ${m.fileName || 'file'} — ${m.fileUrl}`);
+                                if (m.ts) parts.push(`Дата: ${new Date(m.ts.seconds * 1000).toLocaleString()}`);
+                                return parts.join(' | ');
+                            }).join('\n');
+                            aiHistory.push({ role: 'tool', tool_call_id: call.id, content: `Найдено ${msgs.length} записей:\n${summary}` });
+
+                            // Render header text
+                            const bubble = aiAppendMsg('assistant', `📦 По коду **${code}** найдено ${msgs.length} ${msgs.length === 1 ? 'запись' : 'записей'}:`);
+
+                            // Render each message as a styled card (like import panel)
+                            msgs.forEach((m, i) => {
+                                const card = document.createElement('div');
+                                card.className = 'packet-card' + (m.fileUrl ? ' has-file' : '');
+                                card.style.marginTop = '8px';
+
+                                // Meta: date
+                                const meta = document.createElement('div');
+                                meta.className = 'packet-meta';
+                                const date = m.ts ? new Date(m.ts.seconds * 1000).toLocaleString() : '—';
+                                meta.textContent = `CODE: ${code.toUpperCase()} · ${date}`;
+                                card.appendChild(meta);
+
+                                // Text body
+                                if (m.text) {
+                                    const body = document.createElement('div');
+                                    body.style.cssText = 'font-size:13.5px;line-height:1.6;margin-top:4px;color:var(--text);';
+                                    body.textContent = m.text;
+                                    card.appendChild(body);
+                                }
+
+                                // File link styled like import
+                                if (m.fileUrl) {
+                                    const link = document.createElement('a');
+                                    link.className = 'file-link';
+                                    link.href = m.fileUrl;
+                                    link.target = '_blank';
+                                    link.download = m.fileName || 'file';
+                                    link.innerHTML = `<svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M13 2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7z"/><polyline points="13 2 13 7 18 7"/></svg> ${m.fileName || 'Скачать файл'}`;
+                                    card.appendChild(link);
+                                }
+
+                                if (bubble && bubble.parentElement) {
+                                    bubble.appendChild(card);
+                                } else {
+                                    const feed = document.getElementById('aiFeed');
+                                    feed.appendChild(card);
+                                }
+                            });
+                        }
+                    } catch(e) {
+                        aiHistory.push({ role: 'tool', tool_call_id: call.id, content: `Ошибка: ${e.message}` });
+                        aiAppendMsg('assistant', `⚠️ Ошибка при получении данных: ${e.message}`);
+                    }
+                    // fetch_by_code не делает повторный запрос к API — сразу скрываем typing
+                    aiHideTyping();
+                    setAiBtn('idle');
+                    continue;
+
+                } else if (call.function.name === 'send_telegram_file') {
                     const result = await sendTgFile(args.filename, args.content, args.caption || '');
                     // Mistral требует content как строку в tool-сообщении
                     aiHistory.push({
@@ -2533,6 +2678,23 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
                     aiHideTyping();
                     if (result.ok) {
                         aiAppendMsg('assistant', `📎 Файл **${args.filename}** отправлен в Telegram${args.caption ? `\n${args.caption}` : ''}`);
+                    } else if (result.reason === 'no_id') {
+                        aiAppendMsg('assistant', '⚠️ Укажи **ID или @username** Telegram в поле справа сверху — и я сразу отправлю файл.');
+                    } else {
+                        aiAppendMsg('assistant', `⚠️ Не удалось отправить файл: ${result.reason}`);
+                    }
+
+                } else if (call.function.name === 'send_telegram_file_url') {
+                    const result = await sendTgFileByUrl(args.file_url, args.file_name, args.caption || '');
+                    aiHistory.push({
+                        role: 'tool',
+                        tool_call_id: call.id,
+                        content: result.ok ? 'Файл отправлен успешно.' : `Ошибка: ${result.reason}`
+                    });
+                    aiHideTyping();
+                    if (result.ok) {
+                        const chatId = document.getElementById('chatIdInput').value.trim();
+                        aiAppendMsg('assistant', `📎 Файл **${args.file_name}** отправлен в Telegram (${chatId})`);
                     } else if (result.reason === 'no_id') {
                         aiAppendMsg('assistant', '⚠️ Укажи **ID или @username** Telegram в поле справа сверху — и я сразу отправлю файл.');
                     } else {
