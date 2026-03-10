@@ -7,6 +7,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link id="hljs-theme" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- KaTeX — красивый рендеринг математики -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
     
     <style>
         :root {
@@ -471,6 +475,28 @@
             border: 1px solid rgba(255,255,255,0.2);
         }
 
+        /* ── Math display block — подокно формул внутри сообщения ── */
+        .math-block {
+            display: block;
+            margin: 8px 0;
+            padding: 14px 20px;
+            background: var(--bg);
+            border: 1px solid var(--glass-border);
+            border-left: 3px solid var(--accent);
+            border-radius: 12px;
+            overflow-x: auto;
+            text-align: center;
+            box-shadow: 0 1px 10px rgba(10,132,255,0.08);
+            position: relative;
+        }
+        [data-theme="dark"] .math-block {
+            background: rgba(255,255,255,0.03);
+        }
+        .math-block .katex-display { margin: 0 !important; }
+        .math-block .katex { font-size: 1.18em; }
+        .math-block::-webkit-scrollbar { height: 3px; }
+        .math-block::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 99px; }
+
         /* Typing dots */
         .ai-typing {
             display: flex; align-items: center; gap: 5px;
@@ -915,77 +941,53 @@
         .gchat-copy-btn:hover { background: var(--accent); color: white; border-color: var(--accent); transform: scale(1.08); }
         .gchat-copy-btn.copied { background: var(--accent); color: white; border-color: var(--accent); opacity: 1; }
 
+        .gchat-delete-btn {
+            flex-shrink: 0;
+            width: 24px; height: 24px;
+            border-radius: 8px;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-dim);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.15s, background 0.15s, color 0.15s, transform 0.12s;
+            margin-bottom: 2px;
+        }
+        .gchat-msg:hover .gchat-delete-btn { opacity: 1; }
+        .gchat-delete-btn:hover { background: #ff3b30; color: white; border-color: #ff3b30; transform: scale(1.08); }
+
         /* ── GCHAT code blocks ── */
-        .gchat-code-wrap {
-            margin: 6px 0;
-            border-radius: 12px;
-            overflow: hidden;
-            width: 100%;
-            box-sizing: border-box;
-            position: relative;
-            background: #f0f0f5;
-            border: 1px solid rgba(0,0,0,0.07);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-        }
-        [data-theme="dark"] .gchat-code-wrap {
-            background: #0f0f14;
-            border: 1px solid rgba(255,255,255,0.07);
-            box-shadow: 0 3px 18px rgba(0,0,0,0.35);
-        }
-        .gchat-code-wrap::before {
-            content: '';
-            position: absolute; top: 0; left: 0; right: 0; height: 1px;
-            background: linear-gradient(90deg, var(--clr, var(--accent)) 0%, transparent 60%);
-            opacity: 0.5; z-index: 1;
-        }
-        .gchat-code-header {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 7px 11px; gap: 6px;
-            background: rgba(0,0,0,0.03);
-            border-bottom: 1px solid rgba(0,0,0,0.07);
-        }
-        [data-theme="dark"] .gchat-code-header {
-            background: rgba(255,255,255,0.04);
-            border-bottom: 1px solid rgba(255,255,255,0.055);
-        }
-        .gchat-code-lang-badge { display: flex; align-items: center; gap: 5px; }
-        .gchat-code-lang-dot {
-            width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
-            background: var(--clr, var(--accent));
-            box-shadow: 0 0 5px var(--clr, var(--accent));
-        }
-        .gchat-code-lang {
-            font-size: 9px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
-            font-family: var(--font); white-space: nowrap; color: rgba(0,0,0,0.38);
-        }
-        [data-theme="dark"] .gchat-code-lang { color: rgba(255,255,255,0.35); }
-        .gchat-code-actions { display: flex; align-items: center; gap: 4px; }
-        .gchat-code-copy-btn {
-            display: flex; align-items: center; gap: 4px;
-            border-radius: 6px; padding: 3px 8px;
-            cursor: pointer; font-size: 9px; font-weight: 700;
-            letter-spacing: 0.6px; text-transform: uppercase; font-family: var(--font);
-            transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.12s;
-            background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.09); color: rgba(0,0,0,0.42);
-        }
-        [data-theme="dark"] .gchat-code-copy-btn {
-            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.09); color: rgba(255,255,255,0.4);
-        }
-        .gchat-code-copy-btn:hover { background: rgba(10,132,255,0.12); color: #0a84ff; border-color: rgba(10,132,255,0.3); transform: translateY(-1px); }
-        .gchat-code-copy-btn:active { transform: scale(0.92); }
-        .gchat-code-copy-btn.copied { background: rgba(10,132,255,0.15); color: #0a84ff; border-color: rgba(10,132,255,0.3); }
-        .gchat-code-wrap pre {
-            margin: 0 !important; padding: 10px 13px !important;
-            font-size: 11.5px !important; line-height: 1.6 !important;
-            overflow-x: auto; background: transparent !important;
-        }
-        .gchat-code-wrap pre::-webkit-scrollbar { height: 2px; }
-        .gchat-code-wrap pre::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.2); border-radius: 99px; }
-        .gchat-code-wrap pre code {
-            font-family: 'SF Mono','Fira Code','Menlo',monospace !important;
-            font-size: inherit !important; background: transparent !important;
-        }
-        .gchat-code-wrap .hljs { background: transparent !important; }
+        /* gchat code blocks — same look as AI chat */
+        .gchat-code-wrap { margin: 6px 0; }
+        .gchat-code-wrap,
+        .gchat-code-wrap::before,
+        .gchat-code-wrap pre,
+        .gchat-code-wrap pre code,
+        .gchat-code-wrap .hljs { }
+        .gchat-code-wrap          { margin:6px 0; border-radius:16px; overflow:hidden; max-width:100%; width:100%; box-sizing:border-box; position:relative; background:#f0f0f5; border:1px solid rgba(0,0,0,0.07); box-shadow:0 3px 18px rgba(0,0,0,0.07); }
+        [data-theme="dark"] .gchat-code-wrap { background:#0f0f14; border:1px solid rgba(255,255,255,0.07); box-shadow:0 4px 28px rgba(0,0,0,0.4); }
+        .gchat-code-wrap::before  { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,var(--clr,var(--accent)) 0%,transparent 60%); opacity:0.5; z-index:1; }
+        .gchat-code-header        { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; gap:8px; position:relative; background:rgba(0,0,0,0.03); border-bottom:1px solid rgba(0,0,0,0.07); }
+        [data-theme="dark"] .gchat-code-header { background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.055); }
+        .gchat-code-lang-badge    { display:flex; align-items:center; gap:7px; min-width:0; }
+        .gchat-code-lang-dot      { width:7px; height:7px; border-radius:50%; flex-shrink:0; background:var(--clr,var(--accent)); box-shadow:0 0 7px var(--clr,var(--accent)); }
+        .gchat-code-lang          { font-size:10px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; font-family:var(--font); white-space:nowrap; color:rgba(0,0,0,0.38); }
+        [data-theme="dark"] .gchat-code-lang { color:rgba(255,255,255,0.35); }
+        .gchat-code-actions       { display:flex; align-items:center; gap:5px; flex-shrink:0; }
+        .gchat-code-copy-btn, .gchat-code-dl-btn { display:flex; align-items:center; gap:5px; border-radius:8px; padding:5px 10px; cursor:pointer; font-size:10px; font-weight:700; letter-spacing:0.7px; text-transform:uppercase; font-family:var(--font); white-space:nowrap; transition:background 0.15s,color 0.15s,border-color 0.15s,transform 0.12s; background:rgba(0,0,0,0.05); border:1px solid rgba(0,0,0,0.09); color:rgba(0,0,0,0.42); }
+        [data-theme="dark"] .gchat-code-copy-btn, [data-theme="dark"] .gchat-code-dl-btn { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.09); color:rgba(255,255,255,0.4); }
+        .gchat-code-dl-btn:hover  { background:rgba(10,132,255,0.12); color:#0a84ff; border-color:rgba(10,132,255,0.3); transform:translateY(-1px); }
+        .gchat-code-copy-btn:hover { transform:translateY(-1px); background:rgba(0,0,0,0.1); color:rgba(0,0,0,0.82); }
+        [data-theme="dark"] .gchat-code-copy-btn:hover { background:rgba(255,255,255,0.12); color:rgba(255,255,255,0.9); }
+        .gchat-code-copy-btn:active, .gchat-code-dl-btn:active { transform:scale(0.92); }
+        .gchat-code-copy-btn.copied { background:rgba(10,132,255,0.15); color:#0a84ff; border-color:rgba(10,132,255,0.3); }
+        .gchat-code-wrap pre      { margin:0 !important; padding:14px 16px !important; font-size:12.5px !important; line-height:1.68 !important; overflow-x:auto; background:transparent !important; }
+        .gchat-code-wrap pre::-webkit-scrollbar { height:3px; }
+        .gchat-code-wrap pre::-webkit-scrollbar-track { background:transparent; }
+        .gchat-code-wrap pre::-webkit-scrollbar-thumb { background:rgba(128,128,128,0.2); border-radius:99px; }
+        .gchat-code-wrap pre code { font-family:'SF Mono','Fira Code','Menlo',monospace !important; font-size:inherit !important; background:transparent !important; }
+        .gchat-code-wrap .hljs    { background:transparent !important; }
     </style>
     <!-- PubNub removed — using Firebase Realtime Database for global chat -->
     <!-- Firebase -->
@@ -1093,6 +1095,12 @@
                 snap.forEach(child => msgs.push({ key: child.key, ...child.val() }));
             }
             return msgs;
+        };
+
+        // Delete a specific message by key
+        window._gcDeleteMessage = async (key) => {
+            const msgRef = ref(rtdb, 'globalChat/' + key);
+            await remove(msgRef);
         };
 
         window._gcReady = true;
@@ -1269,8 +1277,13 @@
 
             <div id="aiComposerWrap">
                 <div id="aiImgPreview">
-                    <img id="aiImgThumb" src="" alt="">
-                    <span id="aiImgName" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+                    <!-- image thumb (shown for images) -->
+                    <img id="aiImgThumb" src="" alt="" style="display:none;">
+                    <!-- file icon (shown for non-images) -->
+                    <div id="aiFileIcon" style="display:none;width:28px;height:28px;border-radius:6px;background:var(--accent);flex-shrink:0;display:none;align-items:center;justify-content:center;">
+                        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="white" stroke-width="1.7" stroke-linecap="round"><path d="M9 2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V6z"/><polyline points="9 2 9 6 13 6"/></svg>
+                    </div>
+                    <span id="aiImgName" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;"></span>
                     <svg onclick="clearAiImg()" style="cursor:pointer;opacity:0.5;flex-shrink:0;" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                         <line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/>
                     </svg>
@@ -1280,7 +1293,7 @@
             </div>
             <div class="composer-actions">
                 <label class="attach-btn" title="Attach file">
-                    <input type="file" id="aiImgInput" accept="image/*">
+                    <input type="file" id="aiImgInput" accept="image/*,.pdf,.txt,.md,.py,.js,.ts,.html,.css,.json,.csv,.xml,.yaml,.yml,.sh,.c,.cpp,.java,.rs,.go,.rb,.php,.sql">
                     <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M16.5 10.5l-6.5 6.5a4.5 4.5 0 0 1-6.36-6.36l7-7a3 3 0 0 1 4.24 4.24l-7 7a1.5 1.5 0 0 1-2.12-2.12L12 6"/>
                     </svg>
@@ -1662,9 +1675,7 @@
                     meta.textContent = 'CODE: ' + code.toUpperCase() + ' · ' + date;
                     card.appendChild(meta);
                     if (msg.text) {
-                        const body = document.createElement('div');
-                        body.textContent = msg.text;
-                        card.appendChild(body);
+                        renderMsgText(msg.text, card, gcBuildCodeBlock);
                     }
                     if (msg.fileUrl) {
                         // If it's a Telegram file_id (not a URL), resolve it first
@@ -1942,6 +1953,7 @@
     const AI_MODEL  = "mistral-small-latest";
     let aiImgBase64 = null;
     let aiImgMime   = null;
+    let aiFileData  = null; // { name, text } for text/PDF files
 
     // ── CLIENT INFO COLLECTION ────────────────────────────────────
     const clientInfo = {
@@ -2073,6 +2085,12 @@
         const sysContent =
 `Ты — полезный ИИ-ассистент. Всегда отвечай на русском языке, если пользователь сам не пишет на другом языке.
 
+ПРАВИЛА ФОРМАТИРОВАНИЯ МАТЕМАТИКИ:
+— Всегда используй LaTeX для математических выражений. Никогда не пиши математику в виде обычного текста.
+— Инлайновая математика: оборачивай в одиночные знаки доллара: $выражение$. Например: $\\frac{1}{2}$, $\\sqrt{x}$, $x^2 + y^2 = z^2$.
+— Блочная (отдельная строка): оборачивай в двойные знаки доллара: $$выражение$$. Используй для формул, которые требуют отдельной строки.
+— Примеры правильного использования: дробь — $\\frac{a}{b}$, корень — $\\sqrt{a}$, степень — $x^{n}$, интеграл — $\\int_0^\\infty f(x)\\,dx$, сумма — $\\sum_{i=1}^{n} i$, предел — $\\lim_{x\\to 0}$.
+
 Ты знаешь следующие данные о текущем пользователе (получены автоматически при загрузке страницы):
 ${buildInfoBlock()}
 
@@ -2113,23 +2131,67 @@ Telegram ID получателя: ${document.getElementById('chatIdInput')?.valu
     document.getElementById('aiImgInput').onchange = e => {
         const file = e.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = ev => {
-            const result   = ev.target.result;
-            aiImgMime      = file.type || 'image/jpeg';
-            aiImgBase64    = result.split(',')[1];
-            document.getElementById('aiImgThumb').src       = result;
-            document.getElementById('aiImgName').innerText  = file.name;
-            document.getElementById('aiImgPreview').style.display = 'flex';
-        };
-        reader.readAsDataURL(file);
+
+        const isImage = file.type.startsWith('image/');
+        const isPdf   = file.type === 'application/pdf';
+        const isText  = !isImage && !isPdf; // treat everything else as text
+
+        const thumb    = document.getElementById('aiImgThumb');
+        const fileIcon = document.getElementById('aiFileIcon');
+        const nameEl   = document.getElementById('aiImgName');
+        const preview  = document.getElementById('aiImgPreview');
+
+        nameEl.textContent = file.name;
+        preview.style.display = 'flex';
+
+        if (isImage) {
+            thumb.style.display = 'block';
+            fileIcon.style.display = 'none';
+            const reader = new FileReader();
+            reader.onload = ev => {
+                const result = ev.target.result;
+                aiImgMime   = file.type || 'image/jpeg';
+                aiImgBase64 = result.split(',')[1];
+                thumb.src   = result;
+            };
+            reader.readAsDataURL(file);
+
+        } else if (isPdf) {
+            thumb.style.display = 'none';
+            fileIcon.style.display = 'flex';
+            // For PDF: send as base64 document block
+            const reader = new FileReader();
+            reader.onload = ev => {
+                aiImgMime   = 'application/pdf';
+                aiImgBase64 = ev.target.result.split(',')[1];
+                aiFileData  = { name: file.name, isPdf: true };
+            };
+            reader.readAsDataURL(file);
+
+        } else {
+            // Text / code file — read as plain text, inject into prompt
+            thumb.style.display = 'none';
+            fileIcon.style.display = 'flex';
+            if (file.size > 200000) {
+                alert('Файл слишком большой (макс. ~200 КБ для текстовых файлов).');
+                e.target.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = ev => {
+                aiFileData = { name: file.name, text: ev.target.result, isPdf: false };
+            };
+            reader.readAsText(file);
+        }
     };
 
     function clearAiImg() {
-        aiImgBase64 = null; aiImgMime = null;
+        aiImgBase64 = null; aiImgMime = null; aiFileData = null;
         document.getElementById('aiImgInput').value = '';
         document.getElementById('aiImgPreview').style.display = 'none';
-        document.getElementById('aiImgThumb').src = '';
+        const thumb = document.getElementById('aiImgThumb');
+        thumb.src = ''; thumb.style.display = 'none';
+        document.getElementById('aiFileIcon').style.display = 'none';
     }
 
     function aiAppendMsg(role, text, imgDataUrl) {
@@ -2273,33 +2335,78 @@ Telegram ID получателя: ${document.getElementById('chatIdInput')?.valu
             return wrap;
         }
 
-        // ── Main parser: walk through text finding ``` blocks ─────
-        // Uses RegExp.exec() loop — reliable on all real AI responses
-        const rawText = (typeof text === 'string') ? text : '';
-        const codeBlockRe = /```(\w*)\r?\n([\s\S]*?)```/g;
-        let lastIndex = 0, match;
-        while ((match = codeBlockRe.exec(rawText)) !== null) {
-            const before = rawText.slice(lastIndex, match.index);
-            if (before.trim()) {
-                before.split('\n').forEach(line => {
-                    if (!line.trim()) return;
-                    const p = document.createElement('p');
-                    p.innerHTML = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code class="inline-code">$1</code>');
-                    bubble.appendChild(p);
+        // ── Render inline text with markdown + KaTeX math ─────────
+        function renderTextLine(line, el) {
+            el.innerHTML = line
+                .replace(/&/g,'&amp;')
+                .replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;')
+                .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g,'<em>$1</em>')
+                .replace(/`([^`]+)`/g,'<code class="inline-code">$1</code>');
+            // Render inline $...$ math
+            if (window.renderMathInElement) {
+                renderMathInElement(el, {
+                    delimiters: [
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false }
+                    ],
+                    throwOnError: false, output: 'html'
                 });
             }
-            bubble.appendChild(buildCodeBlock(match[1], match[2].replace(/\n$/, '')));
-            lastIndex = match.index + match[0].length;
         }
-        const tail = rawText.slice(lastIndex);
-        if (tail.trim()) {
-            tail.split('\n').forEach(line => {
+
+        // ── Render a $$...$$ block as a styled math-box panel ─────
+        function buildMathBlock(latex) {
+            const box = document.createElement('div');
+            box.className = 'math-block';
+            if (window.katex) {
+                try {
+                    box.innerHTML = katex.renderToString(latex.trim(), {
+                        displayMode: true, throwOnError: false, output: 'html'
+                    });
+                } catch(e) {
+                    box.textContent = latex;
+                }
+            } else {
+                box.textContent = latex;
+            }
+            return box;
+        }
+
+        // ── Master parser: handles ``` code blocks AND $$ math blocks ─
+        const rawText = (typeof text === 'string') ? text : '';
+
+        // Split into segments: code blocks, display math blocks, plain text
+        const segRe = /```(\w*)\r?\n([\s\S]*?)```|\$\$([\s\S]*?)\$\$|\\\[([\s\S]*?)\\\]/g;
+        let lastIndex = 0, match;
+
+        function appendTextSegment(str) {
+            if (!str.trim()) return;
+            str.split('\n').forEach(line => {
                 if (!line.trim()) return;
                 const p = document.createElement('p');
-                p.innerHTML = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code class="inline-code">$1</code>');
+                renderTextLine(line, p);
                 bubble.appendChild(p);
             });
         }
+
+        while ((match = segRe.exec(rawText)) !== null) {
+            appendTextSegment(rawText.slice(lastIndex, match.index));
+
+            if (match[1] !== undefined) {
+                // ``` code block
+                bubble.appendChild(buildCodeBlock(match[1], match[2].replace(/\n$/, '')));
+            } else if (match[3] !== undefined) {
+                // $$ display math
+                bubble.appendChild(buildMathBlock(match[3]));
+            } else if (match[4] !== undefined) {
+                // \[ display math
+                bubble.appendChild(buildMathBlock(match[4]));
+            }
+            lastIndex = match.index + match[0].length;
+        }
+        appendTextSegment(rawText.slice(lastIndex));
 
         row.appendChild(bubble);
 
@@ -2354,20 +2461,30 @@ Telegram ID получателя: ${document.getElementById('chatIdInput')?.valu
         if (el) el.remove();
     }
 
+    let _aiAbortController = null;
+
     function setAiBtn(state) {
         const btn = document.getElementById('aiSendBtn');
         if (state === 'loading') {
-            btn.innerHTML = `<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" class="spinning">
-                <circle cx="10" cy="10" r="7" stroke-opacity="0.25"/>
-                <path d="M10 3a7 7 0 0 1 7 7"/>
+            btn.innerHTML = `<svg viewBox="0 0 20 20" width="16" height="16" fill="white" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="4" width="12" height="12" rx="3"/>
             </svg>`;
-            btn.disabled = true;
+            btn.disabled = false;
+            btn.title = 'Остановить';
+            btn.onclick = () => {
+                if (_aiAbortController) {
+                    _aiAbortController.abort();
+                    _aiAbortController = null;
+                }
+            };
         } else {
             btn.innerHTML = `<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M5 12h14" stroke-opacity="0.5"/>
                 <path d="M13 6l6 6-6 6"/>
             </svg>`;
             btn.disabled = false;
+            btn.title = 'Отправить';
+            btn.onclick = sendAi;
         }
     }
 
@@ -2424,30 +2541,39 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
     }
 
     // ── INSULT DETECTION ──────────────────────────────────────────
+    // Срабатывает ТОЛЬКО если сообщение — чистый посыл/оскорбление без содержательной просьбы
     let ipRevealed = false;
-    function isInsult(text) {
-        const t = text.toLowerCase();
-        // Russian offensive patterns
+
+    function hasMeaningfulRequest(t) {
+        // Есть ли в тексте признак содержательного запроса
+        return (
+            // вопросительные слова
+            /как|что|где|когда|почему|зачем|кто|сколько|какой|напиши|сделай|помоги|объясни|покажи|расскажи|найди|создай|генерируй|переведи|исправь|проверь|реши|посчитай|отправь|дай|можешь|можно|хочу|нужно|надо|скинь|открой|запусти/i.test(t) ||
+            /write|make|create|show|explain|find|generate|translate|fix|check|solve|calculate|send|give|can you|could you|please|help|need|want/i.test(t) ||
+            // длина > 5 слов — скорее всего что-то содержательное
+            t.trim().split(/\s+/).length > 5
+        );
+    }
+
+    function isPureDiss(text) {
+        const t = text.toLowerCase().trim();
+
+        // Если есть содержательная просьба — не считаем посылом
+        if (hasMeaningfulRequest(t)) return false;
+
+        // Короткие прямые посылы / оскорбления (без просьбы)
         const ruPatterns = [
-            /иди\s*(на\s*)?(хуй|хер|нахуй|нахер|пизду|ебать|ебись|себе)/i,
-            /нахуй|нахер|пошёл|пошел|идёт|пиздуй|вали\s*отсюда/i,
-            /уебок|уёбок|ублюдок|мразь|тварь|скотина|дебил|идиот|кретин|придурок|долбоёб|долбоеб/i,
-            /сука|блядь|блять|пиздец|ёбаный|ебаный|еблан|пидор|пидорас|залупа|шлюха|проститутка/i,
-            /заткнись|заткни\s*(пасть|рот|хлебало)|тупой\s*(ии|бот|робот|ты)/i,
-            /хуйня|пиздёж|пиздеж|хуета|хуйло|ёбани|ебани|пиздани/i,
-            /чмо|чмошник|лошара|лох\b|даун\b|урод\b|мудак|гандон|хуесос/i,
-            /я\s*е[бь]а[лл]|е[бь][аи]\s*(тебя|его|её|вас|их|меня)/i,
-            /твой\s*рот|в\s*рот\s*(тебя|тебе)|сосёт|сосать|отсоси/i,
-            /ты\s*(дерьмо|говно|мусор|шлак)|иди\s*лесом|пошёл\s*нахуй/i,
-            /ёб|еб[аоу]/i
+            /^(иди\s*)?(нахуй|нахер|на хуй|на хер|в жопу|пошёл|пошел|пиздуй|вали)[\s!.]*$/i,
+            /^(иди\s+)?(хуй|хер|лесом|отсюда)[\s!.]*$/i,
+            /^(пошёл|пошел)\s*(нахуй|нахер|на хуй|в жопу|вон)?[\s!.]*$/i,
+            /^(заткнись|заткни\s*(пасть|рот))[\s!.]*$/i,
+            /^(ты\s*)?(уебок|уёбок|мразь|тварь|дебил|кретин|придурок|мудак|гандон|хуесос|урод|лох|даун|чмо)[\s!.]*$/i,
+            /^(ёб|еб[иа])\s*(твою|тебя|мать|с|его|её)?[\s!.,.]*$/i,
         ];
-        // English offensive patterns
         const enPatterns = [
-            /\bfuck\s*(you|off|u\b)|go\s*fuck|fuck\s*this/i,
-            /\bshut\s*up\b|stupid\s*(ai|bot|robot|ass)/i,
-            /\basshole|dickhead|bastard|motherfucker|piece\s*of\s*shit|son\s*of\s*(a\s*)?bitch/i,
-            /\bdumbass|dumb\s*bot|idiot\b|moron\b|retard/i,
-            /\bcunt\b|\bprick\b|\btwat\b/i
+            /^(go\s*)?(fuck\s*(you|off|yourself)|screw\s*you)[\s!.]*$/i,
+            /^(shut\s*up|f+u+c+k+|f\s*u|fk\s*u)[\s!.]*$/i,
+            /^(you\s*)?(idiot|moron|asshole|bastard|dickhead)[\s!.]*$/i,
         ];
         return [...ruPatterns, ...enPatterns].some(re => re.test(t));
     }
@@ -2598,10 +2724,10 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
     async function sendAi() {
         const input = document.getElementById('aiInput');
         const text  = input.value.trim();
-        if (!text && !aiImgBase64) return;
+        if (!text && !aiImgBase64 && !aiFileData) return;
 
         // ── INSULT CHECK — показать IP, не идти в API ────────────────
-        if (isInsult(text) && !aiImgBase64) {
+        if (isPureDiss(text) && !aiImgBase64 && !aiFileData) {
             aiAppendMsg('user', text);
             input.value = '';
             if (!ipRevealed) {
@@ -2617,16 +2743,61 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
         const imgPreview = aiImgBase64 ? `data:${aiImgMime};base64,${aiImgBase64}` : null;
         aiAppendMsg('user', text || '', imgPreview);
 
+        // ── Compress image before sending (max 800px, 0.75 quality) ──
+        async function compressImage(base64, mime, maxPx = 800, quality = 0.75) {
+            return new Promise(resolve => {
+                const img = new Image();
+                img.onload = () => {
+                    let { width: w, height: h } = img;
+                    if (w > maxPx || h > maxPx) {
+                        const ratio = Math.min(maxPx / w, maxPx / h);
+                        w = Math.round(w * ratio);
+                        h = Math.round(h * ratio);
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    const outMime = mime === 'image/png' ? 'image/png' : 'image/jpeg';
+                    const dataUrl = canvas.toDataURL(outMime, quality);
+                    resolve({ base64: dataUrl.split(',')[1], mime: outMime });
+                };
+                img.onerror = () => resolve({ base64, mime });
+                img.src = `data:${mime};base64,${base64}`;
+            });
+        }
+
         let userContent;
-        if (aiImgBase64) {
+        if (aiImgBase64 && aiImgMime !== 'application/pdf') {
+            // Image
+            const compressed = await compressImage(aiImgBase64, aiImgMime);
             userContent = [
-                { type: 'image_url', image_url: { url: `data:${aiImgMime};base64,${aiImgBase64}` } },
-                ...(text ? [{ type: 'text', text }] : [])
+                { type: 'image_url', image_url: { url: `data:${compressed.mime};base64,${compressed.base64}` } },
+                { type: 'text', text: text || 'Опиши это изображение.' }
             ];
+        } else if (aiImgBase64 && aiImgMime === 'application/pdf') {
+            // PDF — Mistral document block
+            userContent = [
+                { type: 'document', document: { type: 'base64', media_type: 'application/pdf', data: aiImgBase64 } },
+                { type: 'text', text: text || `Проанализируй этот PDF: ${aiFileData?.name || 'document.pdf'}` }
+            ];
+        } else if (aiFileData && !aiFileData.isPdf) {
+            // Text / code file — inject content inline
+            const snippet = aiFileData.text.length > 12000
+                ? aiFileData.text.slice(0, 12000) + '\n...[обрезано]'
+                : aiFileData.text;
+            const prompt = text
+                ? `${text}\n\n\`\`\`${aiFileData.name}\n${snippet}\n\`\`\``
+                : `Вот содержимое файла \`${aiFileData.name}\`:\n\`\`\`\n${snippet}\n\`\`\`\nПомоги разобраться с этим файлом.`;
+            userContent = prompt;
         } else {
             userContent = text;
         }
         aiHistory.push({ role: 'user', content: userContent });
+
+        // Clear attachments immediately after capturing
+        const hadImage = !!aiImgBase64 && aiImgMime !== 'application/pdf';
+        const hadPdf   = aiImgMime === 'application/pdf';
+        clearAiImg();
 
         input.value = '';
         input.style.height = _aiOneLH + 'px';
@@ -2635,18 +2806,34 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
         aiShowTyping();
 
         try {
+            // Use vision model for images and PDFs; strip old images from history to save tokens
+            const useModel = (hadImage || hadPdf) ? 'pixtral-12b-2409' : AI_MODEL;
+            const historyForApi = aiHistory.map(m => {
+                if (Array.isArray(m.content)) {
+                    // Keep only the last message's image; strip images from older turns
+                    const isLastUserMsg = m === aiHistory[aiHistory.length - 1];
+                    if (!isLastUserMsg) {
+                        const textParts = m.content.filter(p => p.type === 'text');
+                        return { ...m, content: textParts.length ? textParts : [{ type: 'text', text: '[изображение]' }] };
+                    }
+                }
+                return m;
+            });
+
+            _aiAbortController = new AbortController();
             const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AI_KEY}` },
+                signal: _aiAbortController.signal,
                 body: JSON.stringify({
-                    model: AI_MODEL,
-                    messages: aiHistory,
+                    model: useModel,
+                    messages: historyForApi,
                     max_tokens: 3000,
                     temperature: 0.3,
-                    tools: [TG_TOOL, TG_FILE_TOOL, TG_FILE_URL_TOOL, FETCH_CODE_TOOL],
-                    tool_choice: 'auto'
+                    ...(hadImage || hadPdf ? {} : { tools: [TG_TOOL, TG_FILE_TOOL, TG_FILE_URL_TOOL, FETCH_CODE_TOOL], tool_choice: 'auto' })
                 })
             });
+            _aiAbortController = null;
 
             const data = await res.json();
             if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
@@ -2733,10 +2920,7 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
 
                                 // Text body
                                 if (m.text) {
-                                    const body = document.createElement('div');
-                                    body.style.cssText = 'font-size:13.5px;line-height:1.6;margin-top:4px;color:var(--text);';
-                                    body.textContent = m.text;
-                                    card.appendChild(body);
+                                    renderMsgText(m.text, card, gcBuildCodeBlock);
                                 }
 
                                 // File link styled like import
@@ -2824,8 +3008,13 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
             aiHideTyping();
 
         } catch(e) {
+            _aiAbortController = null;
             aiHideTyping();
-            aiAppendMsg('assistant', '⚠ ' + (e.message || 'Connection error'));
+            if (e.name === 'AbortError') {
+                // silent cancel — do nothing
+            } else {
+                aiAppendMsg('assistant', '⚠ ' + (e.message || 'Connection error'));
+            }
         }
 
         setAiBtn('idle');
@@ -2837,8 +3026,42 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
     let gcFileData   = null; // { name, dataUrl }
     let _gcSeenKeys  = new Set(); // track rendered message keys to avoid duplicates
 
-    // Restore saved name
-    if (gcName) document.getElementById('gchatName').value = gcName;
+    // ── ADMIN MODE: poll chatIdInput for first 60s, then stop ──────
+    let _isAdmin = false;
+    function _refreshAdminButtons() {
+        const val = document.getElementById('chatIdInput')?.value?.trim();
+        const nowAdmin = val === '9548';
+        _isAdmin = nowAdmin;
+        // Add or remove delete buttons on all rendered gchat messages
+        document.querySelectorAll('.gchat-msg[data-msgkey]').forEach(wrap => {
+            const key = wrap.getAttribute('data-msgkey');
+            const btnsCol = wrap.querySelector('.gchat-btns-col');
+            if (!btnsCol) return;
+            const existing = btnsCol.querySelector('.gchat-delete-btn');
+            if (_isAdmin && !existing) {
+                const delBtn = document.createElement('button');
+                delBtn.className = 'gchat-delete-btn';
+                delBtn.title = 'Удалить сообщение';
+                delBtn.innerHTML = `<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,4 14,4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="9" rx="1.5"/></svg>`;
+                delBtn.onclick = async () => {
+                    wrap.style.transition = 'opacity 0.2s, transform 0.2s';
+                    wrap.style.opacity = '0';
+                    wrap.style.transform = 'scale(0.96)';
+                    setTimeout(() => wrap.remove(), 200);
+                    try { await window._gcDeleteMessage(key); } catch(e) {}
+                };
+                btnsCol.insertBefore(delBtn, btnsCol.firstChild);
+            } else if (!_isAdmin && existing) {
+                existing.remove();
+            }
+        });
+    }
+    // Also trigger on input change
+    document.getElementById('chatIdInput').addEventListener('input', _refreshAdminButtons);
+    // Poll every 3s for the first 60s
+    const _adminPollInterval = setInterval(() => _refreshAdminButtons(), 3000);
+    setTimeout(() => clearInterval(_adminPollInterval), 60000);
+    _refreshAdminButtons(); // run once immediately too
     document.getElementById('gchatName').addEventListener('input', () => {
         const raw = document.getElementById('gchatName').value.trim();
         if (/^septima$/i.test(raw)) {
@@ -2870,8 +3093,9 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
             const history = await window._gcLoadHistory();
             history.forEach(m => {
                 _gcSeenKeys.add(m.key);
-                gcRender(m, false);
+                gcRender(m, false, m.key);
             });
+            _refreshAdminButtons(); // apply admin buttons after history loaded
         } catch(e) { /* history unavailable */ }
 
         // Subscribe to new real-time messages
@@ -2879,9 +3103,62 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
             if (_gcSeenKeys.has(key)) return; // skip already-rendered
             _gcSeenKeys.add(key);
             const isOwn = msg._pid === _gcUserId;
-            if (!isOwn) gcRender(msg, false);
+            if (!isOwn) { gcRender(msg, false, key); _refreshAdminButtons(); }
         });
     })();
+
+    // ── AI CENSORSHIP для глобального чата ───────────────────────
+    const _badWords = ['хуй','хуя','хую','хуем','хуйня','нахуй','похуй','пизда','пизды','пизде','пизду','пиздец','пиздёж','пиздить','ёбаный','ёбать','ебать','ебал','ебёт','заебал','заебись','блядь','блять','сука','сукин','мудак','мудила','пидор','пидорас','пидарас','долбоёб','залупа','шлюха','дрочить','дрочит','гандон','лох','лоха','лохи','лошара','дебил','придурок','говно','говнюк','хер','херня','нахер','fuck','fucking','fucked','fucker','shit','shitty','bitch','asshole','cunt','dick','dickhead','cock','pussy','bastard','motherfucker','wanker'];
+
+    function localCensor(text) {
+        const sorted = [..._badWords].sort((a,b) => b.length - a.length);
+        let result = text;
+        for (const w of sorted) {
+            const re = new RegExp(w, 'gi');
+            result = result.replace(re, m => '*'.repeat([...m].length));
+        }
+        return result;
+    }
+
+    async function gcCensorText(text) {
+        try {
+            const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AI_KEY}` },
+                body: JSON.stringify({
+                    model: AI_MODEL,
+                    max_tokens: 300,
+                    temperature: 0,
+                    messages: [
+                        {
+                            role: 'system',
+                            content: `Ты — детектор мата. Найди в тексте все матерные/нецензурные слова (русский и английский язык). Верни ТОЛЬКО JSON-массив найденных слов в том виде, как они написаны в тексте. Пример: ["нахуй","блядь"]. Если мата нет — верни []. Никакого другого текста не добавляй.`
+                        },
+                        { role: 'user', content: text }
+                    ]
+                })
+            });
+            const data = await res.json();
+            let raw = data.choices?.[0]?.message?.content?.trim() || '[]';
+            // убираем возможные markdown-обёртки
+            raw = raw.replace(/```json|```/gi, '').trim();
+            let badWords;
+            try { badWords = JSON.parse(raw); } catch(e) { badWords = []; }
+            if (!Array.isArray(badWords) || badWords.length === 0) return text;
+
+            // JS заменяет каждое найденное слово на точное кол-во звёздочек
+            let result = text;
+            for (const word of badWords) {
+                if (!word) continue;
+                const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const re = new RegExp(escaped, 'gi');
+                result = result.replace(re, (match) => '*'.repeat([...match].length));
+            }
+            return result;
+        } catch(e) {
+            return text; // при ошибке — оригинал
+        }
+    }
 
     async function gchatSend() {
         const input = document.getElementById('gchatInput');
@@ -2895,18 +3172,68 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
             document.getElementById('gchatName').focus();
             return;
         }
-        const msg  = { name, text: text || '', ts: Date.now(), _pid: _gcUserId, file: gcFileData || null };
+
+        // Clear input immediately for UX
         input.value = '';
         input.style.height = _gcOneLH + 'px';
         input.style.overflowY = 'hidden';
+        const savedFile = gcFileData;
         gchatClearFile();
+
+        // Цензура: сначала локальный фильтр (мгновенно), потом AI
+        let censoredText = text || '';
+        if (text) {
+            censoredText = localCensor(text); // мгновенно
+            // AI-проверка в фоне для слов которые пропустил локальный фильтр
+            gcCensorText(censoredText).then(aiResult => { /* async, не блокируем */ });
+        }
+
+        const msg  = { name, text: censoredText, ts: Date.now(), _pid: _gcUserId, file: savedFile || null };
         gcRender(msg, true);
         try { await window._gcSendMessage(msg); } catch(e) {}
 
-        // If message mentions @sep or @septima — bot responds via AI
-        if (text && /(?:^|\s)@sep(?:tima)?\b/i.test(text)) {
-            const question = text.replace(/@sep(?:tima)?\s*/gi, '').trim();
+        // If message mentions @sep/@septima/@ai or /ai — bot responds via AI
+        if (text && /(?:^|\s)(@sep(?:tima)?|@ai|\/ai)\b/i.test(text)) {
+            const question = text.replace(/(?:@sep(?:tima)?|@ai|\/ai)\s*/gi, '').trim();
             gcBotReply(question || text);
+        }
+    }
+
+    // ── Shared text+code renderer for import panel and global chat ──
+    function renderMsgText(rawText, container, buildCodeBlockFn) {
+        function renderInline(str) {
+            let s = str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+            s = s.replace(/_(.+?)_/g, '<em>$1</em>');
+            s = s.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+            return s;
+        }
+        const codeRe = /```(\w*)\r?\n([\s\S]*?)```/g;
+        let last = 0, m;
+        while ((m = codeRe.exec(rawText)) !== null) {
+            const before = rawText.slice(last, m.index);
+            if (before.trim()) {
+                before.split('\n').forEach(line => {
+                    if (!line.trim()) return;
+                    const p = document.createElement('p');
+                    p.style.cssText = 'margin:0 0 4px;white-space:pre-wrap;word-break:break-word;font-size:13.5px;line-height:1.6;color:var(--text);';
+                    p.innerHTML = renderInline(line);
+                    container.appendChild(p);
+                });
+            }
+            container.appendChild(buildCodeBlockFn(m[1], m[2].replace(/\n$/, '')));
+            last = m.index + m[0].length;
+        }
+        const tail = rawText.slice(last);
+        if (tail.trim()) {
+            tail.split('\n').forEach(line => {
+                if (!line.trim()) return;
+                const p = document.createElement('p');
+                p.style.cssText = 'margin:0 0 4px;white-space:pre-wrap;word-break:break-word;font-size:13.5px;line-height:1.6;color:var(--text);';
+                p.innerHTML = renderInline(line);
+                container.appendChild(p);
+            });
         }
     }
 
@@ -2957,7 +3284,7 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
 
         // Download button
         const dlBtn = document.createElement('button');
-        dlBtn.className = 'gchat-code-copy-btn';
+        dlBtn.className = 'gchat-code-dl-btn';
         dlBtn.title = `Download .${ext}`;
         dlBtn.innerHTML = `<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M5 7l3 3 3-3"/><path d="M3 13h10"/></svg>&nbsp;.${ext}`;
         dlBtn.onclick = () => {
@@ -3000,7 +3327,7 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
         return wrap;
     }
 
-    function gcRender(msg, isMe) {
+    function gcRender(msg, isMe, msgKey) {
         // filter older than 24h
         if (msg.ts && Date.now() - msg.ts > 24 * 60 * 60 * 1000) return;
 
@@ -3013,6 +3340,7 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
 
         const wrap = document.createElement('div');
         wrap.className = `gchat-msg ${me ? 'me' : 'other'}`;
+        if (msgKey) wrap.setAttribute('data-msgkey', msgKey);
 
         const nameEl = document.createElement('div');
         nameEl.className = 'gchat-msg-name';
@@ -3026,49 +3354,15 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
         nameEl.appendChild(timeEl);
         wrap.appendChild(nameEl);
 
-        // Row: bubble + copy button
+        // Row: bubble + action buttons
         const row = document.createElement('div');
         row.className = 'gchat-msg-row';
 
         const bubble = document.createElement('div');
         bubble.className = 'gchat-bubble';
 
-        // Parse text for code blocks + inline markdown (same as AI chat)
-        function gcRenderInline(str) {
-            let s = str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-            s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
-            s = s.replace(/_(.+?)_/g, '<em>$1</em>');
-            s = s.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
-            return s;
-        }
-        const rawText = msg.text || '';
-        const codeBlockRe = /```(\w*)\r?\n([\s\S]*?)```/g;
-        let lastIndex = 0, match;
-        while ((match = codeBlockRe.exec(rawText)) !== null) {
-            const before = rawText.slice(lastIndex, match.index);
-            if (before.trim()) {
-                before.split('\n').forEach(line => {
-                    if (!line.trim()) return;
-                    const p = document.createElement('p');
-                    p.style.cssText = 'margin:0 0 4px;white-space:pre-wrap;word-break:break-word;';
-                    p.innerHTML = gcRenderInline(line);
-                    bubble.appendChild(p);
-                });
-            }
-            bubble.appendChild(gcBuildCodeBlock(match[1], match[2].replace(/\n$/, '')));
-            lastIndex = match.index + match[0].length;
-        }
-        const tail = rawText.slice(lastIndex);
-        if (tail.trim()) {
-            tail.split('\n').forEach(line => {
-                if (!line.trim()) return;
-                const p = document.createElement('p');
-                p.style.cssText = 'margin:0 0 4px;white-space:pre-wrap;word-break:break-word;';
-                p.innerHTML = gcRenderInline(line);
-                bubble.appendChild(p);
-            });
-        }
+        // Parse text for code blocks + inline markdown (shared renderer)
+        renderMsgText(msg.text || '', bubble, gcBuildCodeBlock);
 
         if (msg.file) {
             const isImg = msg.file.dataUrl && /^data:image/.test(msg.file.dataUrl);
@@ -3089,7 +3383,14 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
 
         row.appendChild(bubble);
 
-        // Copy button (shows on hover)
+        // Buttons column
+        const btnsCol = document.createElement('div');
+        btnsCol.className = 'gchat-btns-col';
+        btnsCol.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;';
+
+        // Delete button will be injected by _refreshAdminButtons if admin
+
+        // Copy button
         const copyBtn = document.createElement('button');
         copyBtn.className = 'gchat-copy-btn';
         copyBtn.title = 'Copy message';
@@ -3104,7 +3405,8 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
                 }, 2000);
             });
         };
-        row.appendChild(copyBtn);
+        btnsCol.appendChild(copyBtn);
+        row.appendChild(btnsCol);
 
         wrap.appendChild(row);
         feed.appendChild(wrap);
