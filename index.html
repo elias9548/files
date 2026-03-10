@@ -994,7 +994,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore, collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-        import { getDatabase, ref, push, onChildAdded, remove, get, query as rtdbQuery, orderByChild, startAt, endBefore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { getDatabase, ref, push, onChildAdded, remove, get, query as rtdbQuery, orderByChild, startAt, endBefore, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyACgNtcW49YjVoSZ_CfbvNFs0t-Y_SMsYU",
@@ -1052,18 +1052,18 @@
         // ── GLOBAL CHAT via Firebase Realtime Database ──────────────────
         const rtdb = getDatabase(app);
         const chatRef = ref(rtdb, 'globalChat');
-        const GC_TTL = 24 * 60 * 60 * 1000; // 24 hours in ms
+        const GC_MAX_MSGS = 5; // max messages in global chat
 
-        // Delete messages older than 24h
+        // Keep only the last GC_MAX_MSGS messages, delete the rest
         async function gcCleanOld() {
             try {
-                const cutoff = Date.now() - GC_TTL;
-                const oldQ = rtdbQuery(chatRef, orderByChild('ts'), endBefore(cutoff));
-                const snap = await get(oldQ);
-                if (snap.exists()) {
-                    const dels = [];
-                    snap.forEach(child => dels.push(remove(child.ref)));
-                    await Promise.all(dels);
+                const allSnap = await get(rtdbQuery(chatRef, orderByChild('ts')));
+                if (!allSnap.exists()) return;
+                const keys = [];
+                allSnap.forEach(child => keys.push(child.key));
+                if (keys.length > GC_MAX_MSGS) {
+                    const toDelete = keys.slice(0, keys.length - GC_MAX_MSGS);
+                    await Promise.all(toDelete.map(k => remove(ref(rtdb, 'globalChat/' + k))));
                 }
             } catch(e) { /* silent */ }
         }
@@ -1071,24 +1071,22 @@
         // Send a message to RTDB
         window._gcSendMessage = async (msg) => {
             await push(chatRef, msg);
-            // Opportunistically clean old messages on each send
+            // Trim to max 7 messages after each send
             gcCleanOld();
         };
 
-        // Subscribe to new messages (only those newer than 24h ago)
+        // Subscribe to new messages (last 7 + any new arriving)
         window._gcSubscribe = (onMsg) => {
-            const cutoff = Date.now() - GC_TTL;
-            const recentQ = rtdbQuery(chatRef, orderByChild('ts'), startAt(cutoff));
+            const recentQ = rtdbQuery(chatRef, orderByChild('ts'), limitToLast(GC_MAX_MSGS));
             onChildAdded(recentQ, (snap) => {
                 const msg = snap.val();
                 if (msg) onMsg(msg, snap.key);
             });
         };
 
-        // Load last 24h of history
+        // Load last 7 messages of history
         window._gcLoadHistory = async () => {
-            const cutoff = Date.now() - GC_TTL;
-            const recentQ = rtdbQuery(chatRef, orderByChild('ts'), startAt(cutoff));
+            const recentQ = rtdbQuery(chatRef, orderByChild('ts'), limitToLast(GC_MAX_MSGS));
             const snap = await get(recentQ);
             const msgs = [];
             if (snap.exists()) {
