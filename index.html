@@ -1123,8 +1123,13 @@
                 xhr.onload = () => {
                     try {
                         const data = JSON.parse(xhr.responseText);
-                        if (data.secure_url) const _fmt = data.format || ''; const _orig = data.original_filename || 'file'; resolve({ url: data.secure_url, name: _fmt ? (_orig + '.' + _fmt) : _orig, type: data.resource_type });
-                        else reject(new Error(data.error?.message || 'Upload failed'));
+                        if (data.secure_url) {
+                            const _fmt = data.format || '';
+                            const _orig = data.original_filename || 'file';
+                            resolve({ url: data.secure_url, name: _fmt ? (_orig + '.' + _fmt) : _orig, type: data.resource_type });
+                        } else {
+                            reject(new Error(data.error?.message || 'Upload failed'));
+                        }
                     } catch(e) { reject(e); }
                 };
                 xhr.onerror = () => reject(new Error('Network error'));
