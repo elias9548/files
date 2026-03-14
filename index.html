@@ -65,6 +65,50 @@
             box-shadow: var(--card-shadow);
             gap: 12px;
         }
+
+        @media (max-width: 600px) {
+            /* Шапка становится flex-wrap: каждая группа на своей строке */
+            .top-nav {
+                height: auto;
+                flex-wrap: wrap;
+                padding: 10px 14px;
+                gap: 8px;
+                align-items: center;
+            }
+            /* Строка 1: brand-group растягивается, theme-btn справа */
+            .top-nav > .brand-group {
+                flex: 1 1 auto;
+                order: 1;
+            }
+            .top-nav > button#theme-btn {
+                order: 1;
+                flex: 0 0 auto;
+            }
+            /* Строки 2+3: средний div занимает всю ширину */
+            .top-nav > div {
+                order: 2;
+                flex: 0 0 100%;
+                display: flex !important;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-left: 0 !important;
+            }
+            /* Строка 2: @septimabot и код — по размеру содержимого, рядом */
+            .top-nav > div > .user-field:nth-child(1),
+            .top-nav > div > .user-field:nth-child(2) {
+                flex: 0 0 auto;
+            }
+            /* Строка 3: ID/username — вся ширина */
+            .top-nav > div > .user-field:nth-child(3) {
+                flex: 0 0 100%;
+                margin-left: 0;
+            }
+            .top-nav > div > .user-field:nth-child(3) input {
+                width: 100%;
+                min-width: 0;
+            }
+        }
         .brand-group { display:flex; align-items:center; gap:10px; }
         .quasar-logo {
             width: 34px; height: 34px;
@@ -3523,24 +3567,24 @@ ${clientInfo.country ? `🗺 Страна IP-адреса: ${clientInfo.country}
 <div id="cardOverlay" onclick="hideCard()" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.1);align-items:center;justify-content:center;">
     <div style="position:fixed;inset:0;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);pointer-events:none;"></div>
     <div onclick="event.stopPropagation()" style="position:relative;z-index:1;
-        width:600px;height:360px;
+        width:min(600px, calc(100vw - 40px));aspect-ratio:5/3;
         background:#fff;
         border-radius:18px;
         overflow:hidden;
         box-shadow:0 24px 70px rgba(0,0,0,0.35);
         text-align:center;
-        padding-top:67px;
+        padding-top:clamp(28px, 11.2%, 67px);
         box-sizing:border-box;
         color:#1a1a1a;
         font-family:Arial,Helvetica,sans-serif;">
-        <div style="font-family:'Times New Roman',Times,serif;font-weight:bold;font-size:37px;letter-spacing:0.7px;margin-bottom:60px;color:#000033;">I'm CEO, Bitch.</div>
-        <div style="font-size:24px;margin-bottom:16px;letter-spacing:0.4px;">elias9548</div>
-        <div style="font-size:15px;margin-bottom:5px;display:flex;justify-content:center;align-items:baseline;gap:7px;">
-            <span style="font-weight:900;font-size:17px;color:#000;">septima</span>
-            <span style="text-transform:uppercase;font-size:12px;letter-spacing:0.7px;color:#444;">CORPORATE OF hARMONY</span>
+        <div style="font-family:'Times New Roman',Times,serif;font-weight:bold;font-size:clamp(18px,6.2vw,37px);letter-spacing:0.7px;margin-bottom:clamp(20px,10%,60px);color:#000033;">I'm CEO, Bitch.</div>
+        <div style="font-size:clamp(12px,4vw,24px);margin-bottom:clamp(8px,4.4%,16px);letter-spacing:0.4px;">elias9548</div>
+        <div style="font-size:clamp(8px,2.5vw,15px);margin-bottom:5px;display:flex;justify-content:center;align-items:baseline;gap:7px;">
+            <span style="font-weight:900;font-size:clamp(9px,2.8vw,17px);color:#000;">septima</span>
+            <span style="text-transform:uppercase;font-size:clamp(6px,2vw,12px);letter-spacing:0.7px;color:#444;">CORPORATE OF hARMONY</span>
         </div>
-        <div style="font-size:13px;color:#444;line-height:1.4;letter-spacing:0.4px;">2207 elisburgh, monte lis, ca 31145-1187</div>
-        <div style="font-size:13px;color:#444;line-height:1.4;letter-spacing:0.4px;">phone: write to telegram @elias9548</div>
+        <div style="font-size:clamp(7px,2.2vw,13px);color:#444;line-height:1.4;letter-spacing:0.4px;">2207 elisburgh, monte lis, ca 31145-1187</div>
+        <div style="font-size:clamp(7px,2.2vw,13px);color:#444;line-height:1.4;letter-spacing:0.4px;">phone: write to telegram @elias9548</div>
         <div style="position:absolute;bottom:0;left:0;width:100%;height:20px;background-color:#3b5998;"></div>
     </div>
 </div>
